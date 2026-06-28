@@ -57,7 +57,7 @@ if (!MONGODB_URI) {
 }
 
 mongoose
-  .connect(MONGODB_URI || '')
+  .connect(MONGODB_URI || '', { family: 4 })
   .then(() => console.log('[mongo] connected to Atlas'))
   .catch((err) => console.error('[mongo] connection error:', err.message));
 

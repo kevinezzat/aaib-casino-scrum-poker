@@ -75,16 +75,19 @@ export default {
       },
       // ── Typography ───────────────────────────────────────────────────
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        'label-md': ['Inter'],
-        'label-sm': ['Inter'],
-        'headline-xl': ['Inter'],
-        'body-sm': ['Inter'],
-        'body-lg': ['Inter'],
-        'body-md': ['Inter'],
-        'headline-lg-mobile': ['Inter'],
-        'headline-md': ['Inter'],
-        'headline-lg': ['Inter'],
+        // Base stack — Aileron leads for all UI text
+        sans: ['Aileron', 'system-ui', 'sans-serif'],
+        // Display / headline roles
+        'headline-xl':       ['Aileron', 'sans-serif'],
+        'headline-lg':       ['Aileron', 'sans-serif'],
+        'headline-lg-mobile':['Aileron', 'sans-serif'],
+        'headline-md':       ['Aileron', 'sans-serif'],
+        // Body + label roles
+        'body-lg':  ['Aileron', 'system-ui', 'sans-serif'],
+        'body-md':  ['Aileron', 'system-ui', 'sans-serif'],
+        'body-sm':  ['Aileron', 'system-ui', 'sans-serif'],
+        'label-md': ['Aileron', 'system-ui', 'sans-serif'],
+        'label-sm': ['Aileron', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         'label-md': ['14px', { lineHeight: '20px', letterSpacing: '0.05em', fontWeight: '600' }],
