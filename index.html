@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>AAIB Scrum Poker — Casino Table</title>
+    <meta name="description" content="AAIB Casino-themed Scrum Poker estimation tool for agile teams. Vote on stories with a premium poker table experience." />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+    <style>
+        /* === Material Symbols === */
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* === Animations === */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(1.8); opacity: 0; }
+        }
+
+        @keyframes chip-wobble {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(3deg); }
+            75% { transform: rotate(-3deg); }
+        }
+
+        @keyframes slide-in-right {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slide-up {
+            from { transform: translateY(24px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scale-in {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes timer-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes card-flip {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(90deg); }
+            100% { transform: rotateY(0deg); }
+        }
+
+        @keyframes reveal-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(218, 52, 55, 0.4); }
+            50% { box-shadow: 0 0 20px 4px rgba(218, 52, 55, 0.3); }
+        }
+
+        @keyframes chip-pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes chip-select-bounce {
+            0% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+            50% { transform: translateY(-4px) scale(1.05); }
+            70% { transform: translateY(-6px); }
+            100% { transform: translateY(-4px); }
+        }
+
+        @keyframes place-chip-slide {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-100px) scale(0.5); opacity: 0.3; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+
+        @keyframes success-check {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* === Transition Utilities === */
+        .animate-float { animation: float 3s ease-in-out infinite; }
+        .animate-slide-in-right { animation: slide-in-right 0.5s ease-out forwards; }
+        .animate-slide-up { animation: slide-up 0.4s ease-out forwards; }
+        .animate-fade-in { animation: fade-in 0.6s ease-out forwards; }
+        .animate-scale-in { animation: scale-in 0.3s ease-out forwards; }
+        .animate-reveal-glow { animation: reveal-glow 2s ease-in-out infinite; }
+
+        /* === Live Dot === */
+        .live-dot {
+            position: relative;
+        }
+        .live-dot::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* === Desktop Vote Chip Styles === */
+        .vote-chip {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        .vote-chip:hover {
+            transform: scale(1.15);
+            animation: chip-wobble 0.4s ease-in-out;
+        }
+        .vote-chip.revealed {
+            animation: card-flip 0.6s ease-in-out;
+        }
+
+        /* === Player Seat === */
+        .player-seat {
+            transition: all 0.3s ease;
+        }
+        .player-seat:hover {
+            transform: scale(1.08);
+        }
+        .player-seat:hover .player-avatar {
+            border-color: var(--player-color, #6cf8bb);
+            border-width: 2px;
+        }
+
+        /* === Table Felt Pattern (subtle) === */
+        .felt-pattern {
+            background-image: 
+                radial-gradient(ellipse 120% 80% at 50% 40%, rgba(255,255,255,0.06) 0%, transparent 70%),
+                radial-gradient(circle at 20% 60%, rgba(255,255,255,0.03) 0%, transparent 40%),
+                radial-gradient(circle at 80% 60%, rgba(255,255,255,0.03) 0%, transparent 40%);
+        }
+
+        /* === Reveal Button === */
+        .reveal-btn {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .reveal-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+        .reveal-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        .reveal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(218, 52, 55, 0.35);
+        }
+        .reveal-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 6px rgba(218, 52, 55, 0.25);
+        }
+
+        /* === Sidebar Tabs === */
+        .sidebar-tab {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .sidebar-tab::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 50%;
+            width: 0; height: 60%;
+            transform: translateY(-50%);
+            background: var(--color-secondary);
+            border-radius: 0 2px 2px 0;
+            transition: width 0.2s ease;
+        }
+        .sidebar-tab:hover::before {
+            width: 3px;
+        }
+        .sidebar-tab.active::before {
+            width: 4px;
+        }
+
+        /* === Nav Link === */
+        .nav-link {
+            position: relative;
+            transition: all 0.2s ease;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 50%;
+            width: 0; height: 2px;
+            background: var(--color-primary);
+            transition: all 0.2s ease;
+            transform: translateX(-50%);
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        /* === Smooth scroll behavior === */
+        * {
+            scroll-behavior: smooth;
+        }
+
+        /* === Timer Animation === */
+        .timer-text {
+            animation: timer-pulse 2s ease-in-out infinite;
+        }
+
+        /* === Desktop Chip Stack hover === */
+        .chip-stack > div {
+            transition: all 0.3s ease;
+        }
+        .chip-stack:hover > div:nth-child(1) {
+            transform: translate(-3px, -3px);
+        }
+        .chip-stack:hover > div:nth-child(2) {
+            transform: translate(0, -1px);
+        }
+        .chip-stack:hover > div:nth-child(3) {
+            transform: translate(3px, 3px);
+        }
+
+        /* === Bottom status pill === */
+        .status-pill {
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* === Mobile Bottom Nav === */
+        .mobile-nav-btn {
+            transition: all 0.2s ease;
+        }
+        .mobile-nav-btn:active {
+            transform: scale(0.92);
+        }
+
+        /* === Stagger Animations for Players === */
+        .player-seat:nth-child(1) { animation: scale-in 0.4s 0.1s ease-out both; }
+        .player-seat:nth-child(2) { animation: scale-in 0.4s 0.2s ease-out both; }
+        .player-seat:nth-child(3) { animation: scale-in 0.4s 0.3s ease-out both; }
+        .player-seat:nth-child(4) { animation: scale-in 0.4s 0.4s ease-out both; }
+        .player-seat:nth-child(5) { animation: scale-in 0.4s 0.5s ease-out both; }
+
+        /* === QR tooltip hover === */
+        .qr-btn {
+            position: relative;
+        }
+        .qr-btn::after {
+            content: 'Share session link';
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 10px;
+            background: #2d3133;
+            color: #fff;
+            font-size: 11px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+        .qr-btn:hover::after {
+            opacity: 1;
+        }
+
+        /* ═══════════════════════════════════════════ */
+        /* Mobile Voter Chip Tray Styles              */
+        /* ═══════════════════════════════════════════ */
+        .estimate-chip {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 1.5px solid #e4beba;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        .estimate-chip::before {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border-radius: 50%;
+            border: 1.5px dashed #d8dadc;
+            transition: all 0.25s ease;
+        }
+        .estimate-chip:hover {
+            border-color: #b61722;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(182, 23, 34, 0.12);
+        }
+        .estimate-chip:hover::before {
+            border-color: #b61722;
+        }
+        .estimate-chip:active {
+            transform: scale(0.95);
+        }
+
+        /* Selected state */
+        .estimate-chip.selected {
+            border-color: #b61722;
+            background: #ffdad7;
+            animation: chip-select-bounce 0.4s ease-out forwards;
+            box-shadow: 0 4px 16px rgba(182, 23, 34, 0.2);
+        }
+        .estimate-chip.selected::before {
+            border-color: #b61722;
+            border-style: solid;
+        }
+
+        /* Stagger pop-in on load */
+        .estimate-chip { animation: chip-pop 0.35s ease-out both; }
+        .estimate-chip:nth-child(1) { animation-delay: 0.05s; }
+        .estimate-chip:nth-child(2) { animation-delay: 0.1s; }
+        .estimate-chip:nth-child(3) { animation-delay: 0.15s; }
+        .estimate-chip:nth-child(4) { animation-delay: 0.2s; }
+        .estimate-chip:nth-child(5) { animation-delay: 0.25s; }
+        .estimate-chip:nth-child(6) { animation-delay: 0.3s; }
+        .estimate-chip:nth-child(7) { animation-delay: 0.35s; }
+        .estimate-chip:nth-child(8) { animation-delay: 0.4s; }
+        .estimate-chip:nth-child(9) { animation-delay: 0.45s; }
+
+        /* Place Chip button */
+        .place-chip-btn {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .place-chip-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 0; height: 0;
+            background: rgba(255,255,255,0.15);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+        .place-chip-btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+        .place-chip-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+        }
+        .place-chip-btn:active {
+            transform: translateY(0);
+        }
+        .place-chip-btn.placed {
+            background: #006c49 !important;
+        }
+
+        /* Mobile view panel transitions */
+        .mobile-panel {
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .mobile-panel.hidden {
+            display: none !important;
+        }
+
+        /* Responsive chip grid sizing */
+        @media (max-width: 360px) {
+            .estimate-chip {
+                width: 68px;
+                height: 68px;
+            }
+        }
+        @media (min-width: 400px) and (max-width: 767px) {
+            .estimate-chip {
+                width: 88px;
+                height: 88px;
+            }
+        }
+    </style>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191c1e",
+                        "secondary-container": "#6cf8bb",
+                        "primary": "#b61722",
+                        "on-background": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-container": "#da3437",
+                        "secondary": "#006c49",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "inverse-surface": "#2d3133",
+                        "secondary-fixed": "#6ffbbe",
+                        "outline-variant": "#e4beba",
+                        "on-tertiary-container": "#fefcff",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#b91a24",
+                        "tertiary-container": "#6c748b",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary-fixed": "#410004",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e0e3e5",
+                        "surface-dim": "#d8dadc",
+                        "on-primary-fixed-variant": "#930013",
+                        "inverse-primary": "#ffb3ad",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "primary-fixed": "#ffdad7",
+                        "secondary-fixed-dim": "#4edea3",
+                        "surface": "#f7f9fb",
+                        "primary-fixed-dim": "#ffb3ad",
+                        "surface-container-low": "#f2f4f6",
+                        "outline": "#8f6f6d",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#00714d",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-bright": "#f7f9fb",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#dae2fd",
+                        "surface-container": "#eceef0",
+                        "on-secondary-fixed-variant": "#005236",
+                        "on-tertiary-fixed": "#131b2e",
+                        "on-primary-container": "#fffbff",
+                        "on-secondary-fixed": "#002113",
+                        "on-secondary": "#ffffff",
+                        "background": "#f7f9fb",
+                        "tertiary": "#545c72",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#5b403e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "xl": "80px",
+                        "lg": "48px",
+                        "sm": "12px",
+                        "md": "24px",
+                        "margin-desktop": "48px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "sans": ["Inter", "system-ui", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface-container-lowest text-on-surface h-screen overflow-hidden flex flex-col font-sans">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- TopNavBar Component                        -->
+<!-- ═══════════════════════════════════════════ -->
+<nav id="top-nav" class="bg-surface-container-low fixed top-0 w-full h-[48px] border-b border-outline-variant flex justify-between items-center px-sm z-50 animate-fade-in">
+    <div class="flex items-center gap-md">
+        <!-- Brand -->
+        <div class="flex items-center gap-xs">
+            <span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">casino</span>
+            <span class="font-headline-md text-[16px] md:text-[18px] font-bold text-primary tracking-tight">AAIB Scrum Poker</span>
+        </div>
+        <!-- Desktop Nav Links -->
+        <div class="hidden md:flex gap-xs ml-sm">
+            <a id="nav-session" class="nav-link active text-primary font-medium px-base py-xs flex items-center h-full text-body-sm transition-colors" href="#">Session Details</a>
+            <a id="nav-history" class="nav-link text-on-surface-variant font-medium hover:text-on-surface px-base py-xs flex items-center h-full text-body-sm transition-colors" href="#">History</a>
+        </div>
+    </div>
+    <div class="flex items-center gap-xs md:gap-sm">
+        <!-- Live Badge (mobile: shown first) -->
+        <div class="flex items-center gap-xs md:order-2">
+            <span class="live-dot w-2 h-2 rounded-full bg-secondary"></span>
+            <span class="font-label-sm text-label-sm text-on-surface uppercase font-semibold hidden md:inline">Live</span>
+        </div>
+        <!-- Issue + Timer Pill -->
+        <div class="flex items-center gap-xs bg-surface-container-high px-xs md:px-sm py-xs rounded-full border border-outline-variant md:order-1">
+            <span class="font-body-sm text-body-sm text-on-surface font-semibold text-[12px] md:text-[14px]">AUTH-204</span>
+            <span class="w-[1px] h-4 bg-outline-variant"></span>
+            <span class="font-body-sm text-body-sm text-secondary font-semibold timer-text text-[12px] md:text-[14px]" id="session-timer">05:00</span>
+        </div>
+        <!-- Action Buttons -->
+        <div class="flex gap-xs md:order-3">
+            <button id="btn-timer" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all p-base rounded-lg hidden md:block" title="Timer">
+                <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">timer</span>
+            </button>
+            <button id="btn-qr" class="qr-btn text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-all p-base rounded-lg hidden md:block" title="QR Code">
+                <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">qr_code_2</span>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- Main Content Layout                        -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="flex flex-1 mt-[48px] relative w-full h-[calc(100vh-48px)]">
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- DESKTOP: Poker Table Canvas            -->
+    <!-- (hidden on mobile)                     -->
+    <!-- ═══════════════════════════════════════ -->
+    <main id="desktop-table-view" class="hidden md:flex flex-1 relative items-center justify-center bg-surface-container-lowest p-lg overflow-hidden">
+
+        <!-- Bottom Left Floating Status Pill -->
+        <div id="status-pill" class="status-pill absolute bottom-md left-md bg-surface-container/90 border border-outline-variant rounded-full flex items-center gap-md px-sm py-xs z-40 animate-slide-up">
+            <div class="flex items-center gap-xs">
+                <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                <span class="font-body-sm text-body-sm text-on-surface font-medium" id="vote-count">5 / 5 voted</span>
+            </div>
+            <div class="w-[1px] h-4 bg-outline-variant"></div>
+            <button class="flex items-center gap-xs text-secondary hover:text-secondary-fixed-dim transition-colors font-medium group">
+                <span class="material-symbols-outlined text-[18px] group-hover:scale-110 transition-transform">qr_code_2</span>
+                <span class="font-label-sm text-label-sm uppercase">Scan to join</span>
+            </button>
+        </div>
+
+        <!-- The Poker Table -->
+        <div id="poker-table" class="relative w-full max-w-[800px] h-[60%] min-h-[340px] max-h-[520px] border-2 border-secondary-fixed rounded-[200px] bg-secondary-container p-1 flex items-center justify-center animate-scale-in" style="animation-duration: 0.6s;">
+            <!-- Inner Green Felt -->
+            <div class="w-full h-full border-[4px] border-secondary-fixed rounded-[196px] bg-secondary relative flex items-center justify-center felt-pattern overflow-visible">
+
+                <!-- Dealer Area (Top Center) -->
+                <div class="absolute -top-[52px] left-1/2 transform -translate-x-1/2 flex flex-col items-center animate-float" style="animation-delay: 0.3s;">
+                    <div class="w-11 h-11 rounded-full border-2 border-outline-variant bg-surface-bright flex items-center justify-center overflow-hidden relative shadow-sm">
+                        <div class="absolute top-0 w-full h-1/3 bg-inverse-surface border-b border-primary-container"></div>
+                        <div class="w-4 h-4 rounded-full bg-on-surface mt-2"></div>
+                    </div>
+                    <div class="w-[52px] h-[30px] rounded-t-xl border-2 border-outline-variant bg-inverse-surface border-b-0 flex justify-center items-end pb-1 relative -mt-1">
+                        <div class="w-5 h-2.5 bg-primary-container absolute top-2 rounded-sm"></div>
+                    </div>
+                    <div class="bg-surface-container-high border border-outline-variant px-xs py-[3px] rounded absolute -bottom-5 whitespace-nowrap shadow-sm">
+                        <span class="font-label-sm text-[10px] text-on-surface uppercase font-bold tracking-wider">Scrum Master · Dealer</span>
+                    </div>
+                </div>
+
+                <!-- Center Pot & Actions -->
+                <div class="flex flex-col items-center gap-sm z-10">
+                    <div id="issue-card" class="bg-surface-container-high/95 border border-outline-variant rounded-lg p-sm min-w-[220px] text-center animate-scale-in backdrop-blur-sm" style="animation-delay: 0.4s;">
+                        <span class="font-body-sm text-body-sm text-on-surface block mb-xs font-bold">AUTH-204</span>
+                        <span class="font-label-sm text-label-sm text-secondary block font-semibold uppercase tracking-wide">Add OAuth login flow</span>
+                    </div>
+
+                    <div class="chip-stack relative w-16 h-16 flex items-center justify-center cursor-pointer" title="Votes collected">
+                        <div class="absolute w-10 h-10 rounded-full border-4 border-secondary-container border-dashed bg-secondary-fixed-dim top-0 left-0 transition-all"></div>
+                        <div class="absolute w-10 h-10 rounded-full border-4 border-secondary-container border-dashed bg-secondary-fixed-dim top-2 left-2 transition-all"></div>
+                        <div class="absolute w-10 h-10 rounded-full border-4 border-secondary-container border-dashed bg-secondary-fixed-dim top-4 left-4 flex items-center justify-center text-on-secondary-container font-bold text-lg transition-all">?</div>
+                    </div>
+
+                    <button id="btn-reveal" class="reveal-btn bg-primary-container text-on-primary-container px-md py-sm rounded-lg font-label-md text-label-md uppercase mt-xs font-bold tracking-wider animate-reveal-glow">
+                        Reveal all chips
+                    </button>
+                </div>
+
+                <!-- Player Seats -->
+                <div class="player-seat absolute left-[-28px] top-1/2 transform -translate-y-1/2 flex flex-col items-center" style="--player-color: #6c748b;">
+                    <div class="player-avatar w-9 h-9 rounded-full border border-outline-variant bg-tertiary-container mb-1 transition-all"></div>
+                    <span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs py-[1px] rounded font-semibold shadow-sm">Alex</span>
+                    <div class="vote-chip absolute top-1/2 -right-14 w-9 h-9 rounded-full border-[3px] border-tertiary-container border-dashed bg-surface-container-lowest flex items-center justify-center font-bold text-on-surface text-sm" data-player="alex">?</div>
+                </div>
+
+                <div class="player-seat absolute right-[-28px] top-1/2 transform -translate-y-1/2 flex flex-col items-center" style="--player-color: #ffdad7;">
+                    <div class="player-avatar w-9 h-9 rounded-full border border-outline-variant bg-primary-fixed mb-1 transition-all"></div>
+                    <span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs py-[1px] rounded font-semibold shadow-sm">Sam</span>
+                    <div class="vote-chip absolute top-1/2 -left-14 w-9 h-9 rounded-full border-[3px] border-primary-fixed border-dashed bg-surface-container-lowest flex items-center justify-center font-bold text-on-surface text-sm" data-player="sam">?</div>
+                </div>
+
+                <div class="player-seat absolute bottom-6 left-14 flex flex-col items-center" style="--player-color: #6cf8bb;">
+                    <div class="player-avatar w-9 h-9 rounded-full border border-outline-variant bg-secondary-fixed mb-1 transition-all"></div>
+                    <span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs py-[1px] rounded font-semibold shadow-sm">Jordan</span>
+                    <div class="vote-chip absolute -top-12 left-10 w-9 h-9 rounded-full border-[3px] border-secondary-fixed border-dashed bg-surface-container-lowest flex items-center justify-center font-bold text-on-surface text-sm" data-player="jordan">?</div>
+                </div>
+
+                <div class="player-seat absolute bottom-6 right-14 flex flex-col items-center" style="--player-color: #bec6e0;">
+                    <div class="player-avatar w-9 h-9 rounded-full border border-outline-variant bg-tertiary-fixed-dim mb-1 transition-all"></div>
+                    <span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs py-[1px] rounded font-semibold shadow-sm">Casey</span>
+                    <div class="vote-chip absolute -top-12 right-10 w-9 h-9 rounded-full border-[3px] border-tertiary-fixed-dim border-dashed bg-surface-container-lowest flex items-center justify-center font-bold text-on-surface text-sm" data-player="casey">?</div>
+                </div>
+
+                <div class="player-seat absolute -bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center" style="--player-color: #8f6f6d;">
+                    <div class="player-avatar w-9 h-9 rounded-full border border-outline-variant bg-outline mb-1 transition-all"></div>
+                    <span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs py-[1px] rounded font-semibold shadow-sm">Taylor</span>
+                    <div class="vote-chip absolute -top-14 left-1/2 transform -translate-x-1/2 w-9 h-9 rounded-full border-[3px] border-outline border-dashed bg-surface-container-lowest flex items-center justify-center font-bold text-on-surface text-sm" data-player="taylor">?</div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- ═══════════════════════════════════════ -->
+    <!-- MOBILE: Voter Chip Tray View           -->
+    <!-- (hidden on desktop)                    -->
+    <!-- ═══════════════════════════════════════ -->
+
+    <!-- Panel: Table (mini status on mobile) -->
+    <div id="mobile-table-panel" class="mobile-panel hidden md:hidden flex-1 flex-col bg-background overflow-y-auto pb-[88px]">
+        <div class="px-margin-mobile pt-md flex flex-col gap-md flex-1">
+            <!-- Mini table status -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+                <div class="flex justify-between items-center mb-sm">
+                    <span class="font-label-md text-label-md text-secondary">AUTH-204</span>
+                    <div class="flex items-center gap-xs">
+                        <span class="w-2 h-2 rounded-full bg-secondary"></span>
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">Voting Open</span>
+                    </div>
+                </div>
+                <h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">Add OAuth login flow</h1>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">As a user, I want to be able to log in using my Google or Microsoft account so that I don't have to remember another password.</p>
+            </div>
+            <!-- Player Status List -->
+            <div class="flex flex-col gap-sm">
+                <h2 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Players at table</h2>
+                <div class="flex flex-col gap-xs">
+                    <div class="flex items-center justify-between bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-base">
+                        <div class="flex items-center gap-sm">
+                            <div class="w-8 h-8 rounded-full bg-tertiary-container border border-outline-variant"></div>
+                            <span class="font-body-sm text-body-sm text-on-surface font-medium">Alex</span>
+                        </div>
+                        <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-base">
+                        <div class="flex items-center gap-sm">
+                            <div class="w-8 h-8 rounded-full bg-primary-fixed border border-outline-variant"></div>
+                            <span class="font-body-sm text-body-sm text-on-surface font-medium">Sam</span>
+                        </div>
+                        <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-base">
+                        <div class="flex items-center gap-sm">
+                            <div class="w-8 h-8 rounded-full bg-secondary-fixed border border-outline-variant"></div>
+                            <span class="font-body-sm text-body-sm text-on-surface font-medium">Jordan</span>
+                        </div>
+                        <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-base">
+                        <div class="flex items-center gap-sm">
+                            <div class="w-8 h-8 rounded-full bg-tertiary-fixed-dim border border-outline-variant"></div>
+                            <span class="font-body-sm text-body-sm text-on-surface font-medium">Casey</span>
+                        </div>
+                        <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-base">
+                        <div class="flex items-center gap-sm">
+                            <div class="w-8 h-8 rounded-full bg-outline border border-outline-variant"></div>
+                            <span class="font-body-sm text-body-sm text-on-surface font-medium">Taylor</span>
+                        </div>
+                        <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel: Status (voting results on mobile) -->
+    <div id="mobile-status-panel" class="mobile-panel hidden md:hidden flex-1 flex-col bg-background overflow-y-auto pb-[88px]">
+        <div class="px-margin-mobile pt-md flex flex-col gap-md">
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+                <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-sm">Voting Status</h2>
+                <div class="flex items-center gap-sm mb-md">
+                    <div class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="h-full bg-secondary rounded-full" style="width: 100%"></div>
+                    </div>
+                    <span class="font-label-md text-label-md text-secondary">5/5</span>
+                </div>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">All team members have submitted their estimates. Waiting for Scrum Master to reveal.</p>
+            </div>
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+                <h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-sm">Current Issue</h3>
+                <span class="font-body-sm text-body-sm text-secondary font-semibold">AUTH-204</span>
+                <p class="font-body-sm text-body-sm text-on-surface mt-xs">Add OAuth login flow</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel: Chips (Mobile Voter - main mobile view) -->
+    <div id="mobile-chips-panel" class="mobile-panel flex md:hidden flex-1 flex-col bg-background overflow-y-auto pb-[88px]">
+        <main class="flex-1 px-margin-mobile pt-md flex flex-col gap-md">
+            <!-- Issue Card -->
+            <div id="mobile-issue-card" class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md animate-fade-in">
+                <div class="flex justify-between items-start mb-sm">
+                    <span class="font-label-md text-label-md text-secondary font-semibold">AUTH-204</span>
+                    <span class="font-label-sm text-label-sm text-on-surface-variant">Voting Open</span>
+                </div>
+                <h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">Add OAuth login flow</h1>
+                <p class="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">As a user, I want to be able to log in using my Google or Microsoft account so that I don't have to remember another password.</p>
+            </div>
+
+            <!-- Chip Tray -->
+            <div class="flex-1 flex flex-col items-center justify-center">
+                <h2 class="font-label-md text-label-md text-on-surface-variant mb-md uppercase tracking-wider text-center">Select your estimate</h2>
+                <div id="chip-grid" class="grid grid-cols-3 gap-md justify-items-center">
+                    <button aria-label="Estimate 1" class="estimate-chip" data-value="1">
+                        <span class="font-headline-xl text-headline-xl text-on-surface z-10 pointer-events-none">1</span>
+                    </button>
+                    <button aria-label="Estimate 2" class="estimate-chip" data-value="2">
+                        <span class="font-headline-xl text-headline-xl text-on-surface z-10 pointer-events-none">2</span>
+                    </button>
+                    <button aria-label="Estimate 3" class="estimate-chip" data-value="3">
+                        <span class="font-headline-xl text-headline-xl text-on-surface z-10 pointer-events-none">3</span>
+                    </button>
+                    <button aria-label="Estimate 5" class="estimate-chip" data-value="5">
+                        <span class="font-headline-xl text-headline-xl text-on-surface z-10 pointer-events-none">5</span>
+                    </button>
+                    <button aria-label="Estimate 8" class="estimate-chip" data-value="8">
+                        <span class="font-headline-xl text-headline-xl text-on-surface z-10 pointer-events-none">8</span>
+                    </button>
+                    <button aria-label="Estimate 13" class="estimate-chip" data-value="13">
+                        <span class="font-headline-xl text-headline-xl text-on-surface z-10 pointer-events-none">13</span>
+                    </button>
+                    <button aria-label="Estimate 21" class="estimate-chip" data-value="21">
+                        <span class="font-headline-xl text-headline-xl text-on-surface z-10 pointer-events-none">21</span>
+                    </button>
+                    <button aria-label="Estimate unknown" class="estimate-chip" data-value="?">
+                        <span class="font-headline-xl text-headline-xl text-on-surface z-10 pointer-events-none">?</span>
+                    </button>
+                    <button aria-label="Need a break" class="estimate-chip" data-value="coffee">
+                        <span class="material-symbols-outlined text-3xl text-on-surface z-10 pointer-events-none">coffee</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Place Chip Action -->
+            <div class="mt-auto pt-sm w-full">
+                <button id="btn-place-chip" class="place-chip-btn w-full bg-[#ef4444] text-white font-label-md text-label-md py-4 rounded-xl flex items-center justify-center gap-2 font-bold tracking-wide uppercase" disabled>
+                    <span id="place-chip-label">Place Chip</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Panel: Team (mobile team list) -->
+    <div id="mobile-team-panel" class="mobile-panel hidden md:hidden flex-1 flex-col bg-background overflow-y-auto pb-[88px]">
+        <div class="px-margin-mobile pt-md flex flex-col gap-md">
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+                <div class="flex justify-between items-center mb-md">
+                    <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface">Team</h2>
+                    <span class="font-label-sm text-label-sm bg-secondary-container text-on-secondary-container px-sm py-xs rounded-full font-bold">5 members</span>
+                </div>
+                <div class="flex flex-col gap-sm">
+                    <div class="flex items-center gap-sm p-base rounded-lg bg-surface-container-low">
+                        <div class="w-10 h-10 rounded-full bg-tertiary-container border-2 border-outline-variant"></div>
+                        <div class="flex-1">
+                            <span class="font-body-sm text-body-sm text-on-surface font-semibold block">Alex</span>
+                            <span class="font-label-sm text-label-sm text-on-surface-variant">Developer</span>
+                        </div>
+                        <span class="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-xs py-[2px] rounded font-bold uppercase">Online</span>
+                    </div>
+                    <div class="flex items-center gap-sm p-base rounded-lg bg-surface-container-low">
+                        <div class="w-10 h-10 rounded-full bg-primary-fixed border-2 border-outline-variant"></div>
+                        <div class="flex-1">
+                            <span class="font-body-sm text-body-sm text-on-surface font-semibold block">Sam</span>
+                            <span class="font-label-sm text-label-sm text-on-surface-variant">QA Engineer</span>
+                        </div>
+                        <span class="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-xs py-[2px] rounded font-bold uppercase">Online</span>
+                    </div>
+                    <div class="flex items-center gap-sm p-base rounded-lg bg-surface-container-low">
+                        <div class="w-10 h-10 rounded-full bg-secondary-fixed border-2 border-outline-variant"></div>
+                        <div class="flex-1">
+                            <span class="font-body-sm text-body-sm text-on-surface font-semibold block">Jordan</span>
+                            <span class="font-label-sm text-label-sm text-on-surface-variant">Designer</span>
+                        </div>
+                        <span class="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-xs py-[2px] rounded font-bold uppercase">Online</span>
+                    </div>
+                    <div class="flex items-center gap-sm p-base rounded-lg bg-surface-container-low">
+                        <div class="w-10 h-10 rounded-full bg-tertiary-fixed-dim border-2 border-outline-variant"></div>
+                        <div class="flex-1">
+                            <span class="font-body-sm text-body-sm text-on-surface font-semibold block">Casey</span>
+                            <span class="font-label-sm text-label-sm text-on-surface-variant">Backend Dev</span>
+                        </div>
+                        <span class="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-xs py-[2px] rounded font-bold uppercase">Online</span>
+                    </div>
+                    <div class="flex items-center gap-sm p-base rounded-lg bg-surface-container-low">
+                        <div class="w-10 h-10 rounded-full bg-outline border-2 border-outline-variant"></div>
+                        <div class="flex-1">
+                            <span class="font-body-sm text-body-sm text-on-surface font-semibold block">Taylor</span>
+                            <span class="font-label-sm text-label-sm text-on-surface-variant">Product Owner</span>
+                        </div>
+                        <span class="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-xs py-[2px] rounded font-bold uppercase">Online</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- Sidebar (Desktop Only)                     -->
+    <!-- ═══════════════════════════════════════════ -->
+    <aside id="sidebar" class="bg-surface-container-highest flex-col h-full w-80 border-l border-outline-variant py-md relative hidden md:flex animate-slide-in-right overflow-y-auto">
+        <!-- Sidebar Header -->
+        <div class="px-md mb-md flex flex-col gap-xs">
+            <div class="flex items-center gap-sm">
+                <div class="w-9 h-9 rounded-lg border border-outline-variant bg-secondary-container flex items-center justify-center text-on-secondary-container">
+                    <span class="material-symbols-outlined text-[18px]">integration_instructions</span>
+                </div>
+                <div>
+                    <h2 id="sidebar-title" class="font-headline-md text-[20px] text-primary m-0 font-bold">Issue Details</h2>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant m-0">Jira Context</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Navigation Tabs -->
+        <nav class="flex flex-col mb-auto px-base gap-xs">
+            <button id="tab-context" class="sidebar-tab text-on-surface-variant hover:bg-surface-container-high text-left px-sm py-xs rounded-lg flex items-center gap-sm transition-all font-medium">
+                <span class="material-symbols-outlined text-[20px]">info</span>
+                <span class="font-body-sm text-body-sm">Context</span>
+            </button>
+            <button id="tab-description" class="sidebar-tab active text-secondary font-semibold bg-surface-container-high text-left px-sm py-xs rounded-lg flex items-center gap-sm transition-all">
+                <span class="material-symbols-outlined text-[20px]">description</span>
+                <span class="font-body-sm text-body-sm">Description</span>
+            </button>
+            <button id="tab-criteria" class="sidebar-tab text-on-surface-variant hover:bg-surface-container-high text-left px-sm py-xs rounded-lg flex items-center gap-sm transition-all font-medium">
+                <span class="material-symbols-outlined text-[20px]">fact_check</span>
+                <span class="font-body-sm text-body-sm">Criteria</span>
+            </button>
+        </nav>
+
+        <!-- Sidebar Panel Content -->
+        <div id="sidebar-content" class="flex-1 p-md overflow-y-auto mt-sm border-t border-outline-variant">
+            <p class="font-body-sm text-body-sm text-on-surface leading-relaxed mb-sm">
+                As a user, I want to be able to log in using my Google or Microsoft account so that I don't have to remember another password.
+            </p>
+            <h3 class="font-body-sm text-body-sm font-bold text-secondary mb-xs mt-md uppercase tracking-wider">Acceptance Criteria</h3>
+            <ul class="font-body-sm text-body-sm text-on-surface-variant list-disc pl-sm space-y-xs">
+                <li>OAuth buttons are visible on login screen</li>
+                <li>Successful redirect to dashboard</li>
+                <li>Handling of denied permissions gracefully</li>
+            </ul>
+        </div>
+
+        <!-- View in Jira Button -->
+        <div class="p-md border-t border-outline-variant">
+            <a id="btn-jira" class="block text-center bg-surface border border-outline-variant text-on-surface font-label-md text-label-md py-sm rounded-lg hover:bg-surface-bright hover:border-secondary transition-all uppercase font-semibold group" href="#">
+                View in Jira <span class="material-symbols-outlined text-[14px] align-middle group-hover:translate-x-0.5 transition-transform">open_in_new</span>
+            </a>
+        </div>
+    </aside>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- BottomNavBar Component (Mobile Only)       -->
+<!-- ═══════════════════════════════════════════ -->
+<nav id="mobile-nav" class="bg-surface-container fixed bottom-0 left-0 w-full flex justify-around items-center px-sm z-50 rounded-t-2xl border-t border-surface-container-highest md:hidden h-[72px] pb-[env(safe-area-inset-bottom)]">
+    <button data-panel="mobile-table-panel" class="mobile-nav-btn flex flex-col items-center justify-center text-on-surface-variant p-xs hover:text-primary transition-colors w-[64px] font-medium">
+        <span class="material-symbols-outlined">casino</span>
+        <span class="font-label-sm text-[10px] mt-0.5 uppercase">Table</span>
+    </button>
+    <button data-panel="mobile-status-panel" class="mobile-nav-btn flex flex-col items-center justify-center text-on-surface-variant p-xs hover:text-primary transition-colors w-[64px] font-medium">
+        <span class="material-symbols-outlined">analytics</span>
+        <span class="font-label-sm text-[10px] mt-0.5 uppercase">Status</span>
+    </button>
+    <button data-panel="mobile-chips-panel" class="mobile-nav-btn active flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-2xl p-xs w-[64px] font-medium">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">token</span>
+        <span class="font-label-sm text-[10px] mt-0.5 uppercase font-bold">Chips</span>
+    </button>
+    <button data-panel="mobile-team-panel" class="mobile-nav-btn flex flex-col items-center justify-center text-on-surface-variant p-xs hover:text-primary transition-colors w-[64px] font-medium">
+        <span class="material-symbols-outlined">group</span>
+        <span class="font-label-sm text-[10px] mt-0.5 uppercase">Team</span>
+    </button>
+</nav>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- Interactive Logic                          -->
+<!-- ═══════════════════════════════════════════ -->
+<script>
+    // === Timer Countdown ===
+    (function initTimer() {
+        let seconds = 300;
+        const timerEl = document.getElementById('session-timer');
+
+        setInterval(() => {
+            if (seconds > 0) seconds--;
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            timerEl.textContent = `${mins}:${secs}`;
+
+            if (seconds <= 30) {
+                timerEl.classList.add('text-error');
+                timerEl.classList.remove('text-secondary');
+            }
+        }, 1000);
+    })();
+
+    // === Desktop: Reveal Button Logic ===
+    (function initReveal() {
+        const btn = document.getElementById('btn-reveal');
+        const chips = document.querySelectorAll('.vote-chip');
+        const votes = [3, 5, 5, 8, 5];
+        let revealed = false;
+
+        btn.addEventListener('click', () => {
+            if (!revealed) {
+                chips.forEach((chip, i) => {
+                    setTimeout(() => {
+                        chip.classList.add('revealed');
+                        chip.textContent = votes[i];
+                        chip.style.borderStyle = 'solid';
+                        chip.style.backgroundColor = '#6cf8bb';
+                        chip.style.color = '#00714d';
+                        chip.style.fontWeight = '800';
+                        chip.style.fontSize = '16px';
+                    }, i * 120);
+                });
+                btn.textContent = 'New Round';
+                btn.classList.remove('animate-reveal-glow');
+                btn.style.background = '#006c49';
+                revealed = true;
+            } else {
+                chips.forEach((chip) => {
+                    chip.textContent = '?';
+                    chip.style.borderStyle = 'dashed';
+                    chip.style.backgroundColor = '';
+                    chip.style.color = '';
+                    chip.style.fontWeight = '';
+                    chip.style.fontSize = '';
+                    chip.classList.remove('revealed');
+                });
+                btn.textContent = 'Reveal all chips';
+                btn.classList.add('animate-reveal-glow');
+                btn.style.background = '';
+                revealed = false;
+            }
+        });
+    })();
+
+    // === Desktop: Sidebar Tab Switching ===
+    (function initTabs() {
+        const tabs = document.querySelectorAll('.sidebar-tab');
+        const content = document.getElementById('sidebar-content');
+
+        const tabContent = {
+            'tab-context': `
+                <div class="space-y-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Type</span>
+                        <span class="font-body-sm text-body-sm text-on-surface font-medium bg-surface-container px-xs py-[2px] rounded">Story</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Priority</span>
+                        <span class="font-body-sm text-body-sm text-primary-container font-semibold">High</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Sprint</span>
+                        <span class="font-body-sm text-body-sm text-on-surface font-medium">Sprint 14</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Reporter</span>
+                        <span class="font-body-sm text-body-sm text-on-surface font-medium">Ahmed K.</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Assignee</span>
+                        <span class="font-body-sm text-body-sm text-on-surface font-medium">Unassigned</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">Labels</span>
+                        <div class="flex gap-xs">
+                            <span class="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-xs py-[1px] rounded font-bold">auth</span>
+                            <span class="font-label-sm text-[10px] bg-tertiary-fixed text-on-tertiary-fixed px-xs py-[1px] rounded font-bold">oauth</span>
+                        </div>
+                    </div>
+                </div>
+            `,
+            'tab-description': `
+                <p class="font-body-sm text-body-sm text-on-surface leading-relaxed mb-sm">
+                    As a user, I want to be able to log in using my Google or Microsoft account so that I don't have to remember another password.
+                </p>
+                <h3 class="font-body-sm text-body-sm font-bold text-secondary mb-xs mt-md uppercase tracking-wider">Acceptance Criteria</h3>
+                <ul class="font-body-sm text-body-sm text-on-surface-variant list-disc pl-sm space-y-xs">
+                    <li>OAuth buttons are visible on login screen</li>
+                    <li>Successful redirect to dashboard</li>
+                    <li>Handling of denied permissions gracefully</li>
+                </ul>
+            `,
+            'tab-criteria': `
+                <div class="space-y-sm">
+                    <div class="flex items-start gap-sm">
+                        <span class="material-symbols-outlined text-secondary text-[18px] mt-[2px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        <span class="font-body-sm text-body-sm text-on-surface">OAuth buttons are visible on login screen</span>
+                    </div>
+                    <div class="flex items-start gap-sm">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[18px] mt-[2px]">radio_button_unchecked</span>
+                        <span class="font-body-sm text-body-sm text-on-surface">Successful redirect to dashboard</span>
+                    </div>
+                    <div class="flex items-start gap-sm">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[18px] mt-[2px]">radio_button_unchecked</span>
+                        <span class="font-body-sm text-body-sm text-on-surface">Handling of denied permissions gracefully</span>
+                    </div>
+                    <div class="flex items-start gap-sm">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[18px] mt-[2px]">radio_button_unchecked</span>
+                        <span class="font-body-sm text-body-sm text-on-surface">Token refresh logic on session timeout</span>
+                    </div>
+                </div>
+            `
+        };
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => {
+                    t.classList.remove('active', 'text-secondary', 'font-semibold', 'bg-surface-container-high');
+                    t.classList.add('text-on-surface-variant', 'font-medium');
+                });
+                tab.classList.add('active', 'text-secondary', 'font-semibold', 'bg-surface-container-high');
+                tab.classList.remove('text-on-surface-variant', 'font-medium');
+
+                content.style.opacity = '0';
+                content.style.transform = 'translateY(8px)';
+                setTimeout(() => {
+                    content.innerHTML = tabContent[tab.id] || tabContent['tab-description'];
+                    content.style.transition = 'all 0.25s ease';
+                    content.style.opacity = '1';
+                    content.style.transform = 'translateY(0)';
+                }, 150);
+            });
+        });
+    })();
+
+    // === Desktop: Nav Link Switching ===
+    (function initNav() {
+        const links = document.querySelectorAll('.nav-link');
+        links.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                links.forEach(l => l.classList.remove('active', 'text-primary'));
+                links.forEach(l => l.classList.add('text-on-surface-variant'));
+                link.classList.add('active', 'text-primary');
+                link.classList.remove('text-on-surface-variant');
+            });
+        });
+    })();
+
+    // === Mobile: Chip Selection ===
+    (function initChipSelection() {
+        const chips = document.querySelectorAll('.estimate-chip');
+        const placeBtn = document.getElementById('btn-place-chip');
+        const placeLbl = document.getElementById('place-chip-label');
+        let selectedValue = null;
+
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                const value = chip.dataset.value;
+
+                // Deselect previous
+                chips.forEach(c => {
+                    c.classList.remove('selected');
+                    const span = c.querySelector('span');
+                    if (span) {
+                        span.classList.remove('text-primary');
+                        span.classList.add('text-on-surface');
+                    }
+                });
+
+                // Select this one
+                chip.classList.add('selected');
+                const span = chip.querySelector('span');
+                if (span) {
+                    span.classList.remove('text-on-surface');
+                    span.classList.add('text-primary');
+                }
+
+                selectedValue = value;
+
+                // Enable place button
+                placeBtn.disabled = false;
+                placeBtn.style.opacity = '1';
+                placeLbl.textContent = value === 'coffee' ? 'Need a Break' : `Place Chip · ${value}`;
+            });
+        });
+
+        // Place Chip action
+        let placed = false;
+        placeBtn.addEventListener('click', () => {
+            if (!selectedValue || placeBtn.disabled) return;
+
+            if (!placed) {
+                // Animate the button to "placed" state
+                placeBtn.classList.add('placed');
+                placeLbl.textContent = '✓ Chip Placed!';
+                placeBtn.querySelector('.material-symbols-outlined').textContent = 'check';
+
+                // Disable chip selection
+                chips.forEach(c => {
+                    c.style.pointerEvents = 'none';
+                    if (!c.classList.contains('selected')) {
+                        c.style.opacity = '0.4';
+                    }
+                });
+                placed = true;
+            } else {
+                // Reset — allow re-voting
+                placeBtn.classList.remove('placed');
+                placeBtn.style.background = '';
+                placeLbl.textContent = `Place Chip · ${selectedValue}`;
+                placeBtn.querySelector('.material-symbols-outlined').textContent = 'arrow_forward';
+
+                chips.forEach(c => {
+                    c.style.pointerEvents = '';
+                    c.style.opacity = '';
+                });
+                placed = false;
+            }
+        });
+
+        // Initial disabled style
+        placeBtn.style.opacity = '0.5';
+    })();
+
+    // === Mobile: Bottom Nav Tab Switching ===
+    (function initMobileNav() {
+        const navBtns = document.querySelectorAll('#mobile-nav .mobile-nav-btn');
+        const panels = {
+            'mobile-table-panel': document.getElementById('mobile-table-panel'),
+            'mobile-status-panel': document.getElementById('mobile-status-panel'),
+            'mobile-chips-panel': document.getElementById('mobile-chips-panel'),
+            'mobile-team-panel': document.getElementById('mobile-team-panel'),
+        };
+
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetPanel = btn.dataset.panel;
+
+                // Update button styles
+                navBtns.forEach(b => {
+                    b.classList.remove('active', 'bg-primary-container', 'text-on-primary-container', 'rounded-2xl');
+                    b.classList.add('text-on-surface-variant');
+                    const icon = b.querySelector('.material-symbols-outlined');
+                    if (icon) icon.style.fontVariationSettings = '';
+                    const label = b.querySelector('.font-label-sm');
+                    if (label) label.classList.remove('font-bold');
+                });
+
+                btn.classList.add('active', 'bg-primary-container', 'text-on-primary-container', 'rounded-2xl');
+                btn.classList.remove('text-on-surface-variant');
+                const activeIcon = btn.querySelector('.material-symbols-outlined');
+                if (activeIcon) activeIcon.style.fontVariationSettings = "'FILL' 1";
+                const activeLabel = btn.querySelector('.font-label-sm');
+                if (activeLabel) activeLabel.classList.add('font-bold');
+
+                // Switch panels
+                Object.entries(panels).forEach(([id, panel]) => {
+                    if (id === targetPanel) {
+                        panel.classList.remove('hidden');
+                        panel.classList.add('flex');
+                    } else {
+                        panel.classList.add('hidden');
+                        panel.classList.remove('flex');
+                    }
+                });
+            });
+        });
+    })();
+</script>
+
+</body>
+</html>

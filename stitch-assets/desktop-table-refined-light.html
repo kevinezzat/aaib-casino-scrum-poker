@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AAIB Scrum Poker</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Geometric shapes for characters */
+        .character-head {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 1px solid var(--tw-prose-body);
+        }
+        .character-body {
+            width: 48px;
+            height: 32px;
+            border-radius: 12px 12px 0 0;
+            border: 1px solid var(--tw-prose-body);
+            border-bottom: none;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface": "#191c1e",
+                        "secondary-container": "#6cf8bb",
+                        "primary": "#b61722",
+                        "on-background": "#191c1e",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-container": "#da3437",
+                        "secondary": "#006c49",
+                        "on-tertiary-fixed-variant": "#3f465c",
+                        "inverse-surface": "#2d3133",
+                        "secondary-fixed": "#6ffbbe",
+                        "outline-variant": "#e4beba",
+                        "on-tertiary-container": "#fefcff",
+                        "on-error": "#ffffff",
+                        "surface-tint": "#b91a24",
+                        "tertiary-container": "#6c748b",
+                        "error-container": "#ffdad6",
+                        "surface-container-high": "#e6e8ea",
+                        "on-primary-fixed": "#410004",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e0e3e5",
+                        "surface-dim": "#d8dadc",
+                        "on-primary-fixed-variant": "#930013",
+                        "inverse-primary": "#ffb3ad",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#bec6e0",
+                        "primary-fixed": "#ffdad7",
+                        "secondary-fixed-dim": "#4edea3",
+                        "surface": "#f7f9fb",
+                        "primary-fixed-dim": "#ffb3ad",
+                        "surface-container-low": "#f2f4f6",
+                        "outline": "#8f6f6d",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#00714d",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-bright": "#f7f9fb",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#dae2fd",
+                        "surface-container": "#eceef0",
+                        "on-secondary-fixed-variant": "#005236",
+                        "on-tertiary-fixed": "#131b2e",
+                        "on-primary-container": "#fffbff",
+                        "on-secondary-fixed": "#002113",
+                        "on-secondary": "#ffffff",
+                        "background": "#f7f9fb",
+                        "tertiary": "#545c72",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#5b403e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "8px",
+                        "gutter": "24px",
+                        "xl": "80px",
+                        "lg": "48px",
+                        "sm": "12px",
+                        "md": "24px",
+                        "margin-desktop": "48px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "label-sm": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface-container-lowest text-on-surface h-screen overflow-hidden flex flex-col font-sans">
+<!-- TopNavBar Component -->
+<nav class="bg-surface-container-low fixed top-0 w-full h-[36px] border-b border-outline-variant flex justify-between items-center px-sm z-50">
+<div class="flex items-center gap-md">
+<span class="font-headline-md text-headline-md font-semibold text-primary">AAIB Scrum Poker</span>
+<div class="hidden md:flex gap-sm">
+<!-- Active Nav Item -->
+<a class="text-primary font-medium border-b-2 border-primary hover:bg-surface-bright transition-colors px-base py-xs flex items-center h-full" href="#">Session Details</a>
+<!-- Inactive Nav Item -->
+<a class="text-on-surface-variant font-medium hover:bg-surface-bright transition-colors px-base py-xs flex items-center h-full" href="#">History</a>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<div class="flex items-center gap-xs bg-surface-container-high px-xs py-base rounded-full border border-outline-variant">
+<span class="font-body-sm text-body-sm text-on-surface font-medium">AUTH-204</span>
+<span class="w-[1px] h-4 bg-outline-variant"></span>
+<span class="font-body-sm text-body-sm text-secondary font-medium">05:00</span>
+</div>
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed"></span>
+<span class="font-label-sm text-label-sm text-on-surface uppercase font-medium">Live</span>
+</div>
+<div class="flex gap-xs">
+<button class="text-on-surface hover:bg-surface-bright transition-colors p-base rounded"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">timer</span></button>
+<button class="text-on-surface hover:bg-surface-bright transition-colors p-base rounded"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">qr_code_2</span></button>
+</div>
+</div>
+</nav>
+<!-- Main Content Layout -->
+<div class="flex flex-1 mt-[36px] relative w-full h-[calc(100vh-36px)]">
+<!-- Canvas Area (Poker Table) -->
+<main class="flex-1 relative flex items-center justify-center bg-surface-container-lowest p-lg">
+<!-- Bottom Left Floating Pill -->
+<div class="absolute bottom-md left-md bg-surface-container border border-outline-variant rounded-full flex items-center gap-md px-sm py-xs shadow-none z-40 hidden md:flex">
+<div class="flex items-center gap-xs">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed"></span>
+<span class="font-body-sm text-body-sm text-on-surface">5 / 5 voted</span>
+</div>
+<div class="w-[1px] h-4 bg-outline-variant"></div>
+<button class="flex items-center gap-xs text-secondary hover:text-secondary-fixed transition-colors font-medium">
+<span class="material-symbols-outlined text-[18px]">qr_code_2</span>
+<span class="font-label-sm text-label-sm uppercase">Scan to join</span>
+</button>
+</div>
+<!-- The Table Container -->
+<div class="relative w-full max-w-[800px] h-[65%] border border-outline-variant rounded-[200px] bg-secondary-container p-1 shadow-none flex items-center justify-center">
+<!-- Inner Green Rim -->
+<div class="w-full h-full border-[4px] border-secondary-fixed rounded-[198px] bg-secondary relative flex items-center justify-center">
+<!-- Dealer Area (Top Center) -->
+<div class="absolute -top-[48px] left-1/2 transform -translate-x-1/2 flex flex-col items-center">
+<div class="w-10 h-10 rounded-full border border-outline-variant bg-surface-bright flex items-center justify-center overflow-hidden relative">
+<!-- Visor / Hat -->
+<div class="absolute top-0 w-full h-1/3 bg-surface-container-lowest border-b border-primary-container"></div>
+<div class="w-4 h-4 rounded-full bg-on-surface mt-2"></div>
+</div>
+<div class="w-16 h-8 rounded-t-lg border border-outline-variant bg-inverse-surface border-b-0 flex justify-center items-end pb-1 relative">
+<!-- Bowtie -->
+<div class="w-4 h-2 bg-primary-container absolute top-2 rounded-sm"></div>
+</div>
+<div class="bg-surface-container-high border border-outline-variant px-xs py-base rounded absolute -bottom-4 whitespace-nowrap">
+<span class="font-label-sm text-label-sm text-on-surface uppercase font-medium">Scrum Master · Dealer</span>
+</div>
+</div>
+<!-- Center Pot & Actions -->
+<div class="flex flex-col items-center gap-md z-10">
+<div class="bg-surface-container-high border border-outline-variant rounded-lg p-sm min-w-[200px] text-center">
+<span class="font-body-sm text-body-sm text-on-surface block mb-base font-semibold">AUTH-204</span>
+<span class="font-label-sm text-label-sm text-secondary block font-semibold uppercase">Add OAuth login flow</span>
+</div>
+<!-- Stack of Chips -->
+<div class="relative w-16 h-16 flex items-center justify-center">
+<div class="absolute w-10 h-10 rounded-full border-4 border-secondary-container border-dashed bg-secondary-fixed-dim top-0 left-0"></div>
+<div class="absolute w-10 h-10 rounded-full border-4 border-secondary-container border-dashed bg-secondary-fixed-dim top-2 left-2"></div>
+<div class="absolute w-10 h-10 rounded-full border-4 border-secondary-container border-dashed bg-secondary-fixed-dim top-4 left-4 flex items-center justify-center text-on-secondary-container font-semibold">?</div>
+</div>
+<!-- Reveal Button -->
+<button class="bg-primary-container text-on-primary-container hover:brightness-110 transition-all px-md py-sm rounded-lg font-label-md text-label-md uppercase mt-sm font-medium">
+                            Reveal all chips
+                        </button>
+</div>
+<!-- Player Seats (Positions: BL, L, R, BR, BC) -->
+<!-- Player 1: Left -->
+<div class="absolute left-[-24px] top-1/2 transform -translate-y-1/2 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full border border-outline-variant bg-tertiary-container mb-1"></div>
+<span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs rounded font-medium">Alex</span>
+<!-- Face down chip -->
+<div class="absolute top-1/2 -right-12 w-8 h-8 rounded-full border-[3px] border-tertiary-container border-dashed bg-surface-container-lowest flex items-center justify-center font-semibold text-on-surface shadow-sm">?</div>
+</div>
+<!-- Player 2: Right -->
+<div class="absolute right-[-24px] top-1/2 transform -translate-y-1/2 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full border border-outline-variant bg-primary-fixed mb-1"></div>
+<span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs rounded font-medium">Sam</span>
+<!-- Face down chip -->
+<div class="absolute top-1/2 -left-12 w-8 h-8 rounded-full border-[3px] border-primary-fixed border-dashed bg-surface-container-lowest flex items-center justify-center font-semibold text-on-surface shadow-sm">?</div>
+</div>
+<!-- Player 3: Bottom Left -->
+<div class="absolute bottom-8 left-12 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full border border-outline-variant bg-secondary-fixed mb-1"></div>
+<span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs rounded font-medium">Jordan</span>
+<div class="absolute -top-10 left-10 w-8 h-8 rounded-full border-[3px] border-secondary-fixed border-dashed bg-surface-container-lowest flex items-center justify-center font-semibold text-on-surface shadow-sm">?</div>
+</div>
+<!-- Player 4: Bottom Right -->
+<div class="absolute bottom-8 right-12 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full border border-outline-variant bg-tertiary-fixed-dim mb-1"></div>
+<span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs rounded font-medium">Casey</span>
+<div class="absolute -top-10 right-10 w-8 h-8 rounded-full border-[3px] border-tertiary-fixed-dim border-dashed bg-surface-container-lowest flex items-center justify-center font-semibold text-on-surface shadow-sm">?</div>
+</div>
+<!-- Player 5: Bottom Center -->
+<div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center">
+<div class="w-8 h-8 rounded-full border border-outline-variant bg-outline mb-1"></div>
+<span class="font-label-sm text-label-sm text-on-surface bg-surface border border-outline-variant px-xs rounded font-medium">Taylor</span>
+<div class="absolute -top-12 left-1/2 transform -translate-x-1/2 w-8 h-8 rounded-full border-[3px] border-outline border-dashed bg-surface-container-lowest flex items-center justify-center font-semibold text-on-surface shadow-sm">?</div>
+</div>
+</div>
+</div>
+</main>
+<!-- SideNavBar Component (Web Only) -->
+<aside class="bg-surface-container-highest flex-col h-full w-80 border-l border-outline-variant py-md relative hidden md:flex">
+<div class="px-md mb-md flex flex-col gap-xs">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded border border-outline-variant bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined text-[16px]">integration_instructions</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-primary m-0 font-semibold">Issue Details</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant m-0">Jira Context</p>
+</div>
+</div>
+</div>
+<!-- Navigation Tabs -->
+<nav class="flex flex-col mb-auto px-base gap-base">
+<button class="text-on-surface-variant hover:bg-surface-container-high text-left px-sm py-xs rounded flex items-center gap-sm transition-colors font-medium">
+<span class="material-symbols-outlined text-[20px]">info</span>
+<span class="font-body-sm text-body-sm">Context</span>
+</button>
+<button class="text-secondary font-medium border-l-4 border-secondary hover:bg-surface-container-high bg-surface-container-high text-left px-sm py-xs rounded flex items-center gap-sm transition-colors translate-x-1">
+<span class="material-symbols-outlined text-[20px]">description</span>
+<span class="font-body-sm text-body-sm">Description</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-high text-left px-sm py-xs rounded flex items-center gap-sm transition-colors font-medium">
+<span class="material-symbols-outlined text-[20px]">fact_check</span>
+<span class="font-body-sm text-body-sm">Criteria</span>
+</button>
+</nav>
+<!-- Panel Content Area -->
+<div class="flex-1 p-md overflow-y-auto mt-sm border-t border-outline-variant">
+<p class="font-body-sm text-body-sm text-on-surface leading-relaxed mb-sm">
+                    As a user, I want to be able to log in using my Google or Microsoft account so that I don't have to remember another password.
+                </p>
+<h3 class="font-body-sm text-body-sm font-semibold text-secondary mb-xs mt-md uppercase tracking-wider">Acceptance Criteria</h3>
+<ul class="font-body-sm text-body-sm text-on-surface-variant list-disc pl-sm space-y-xs">
+<li>OAuth buttons are visible on login screen</li>
+<li>Successful redirect to dashboard</li>
+<li>Handling of denied permissions gracefully</li>
+</ul>
+</div>
+<div class="p-md border-t border-outline-variant">
+<a class="block text-center bg-surface border border-outline-variant text-on-surface font-label-md text-label-md py-sm rounded hover:bg-surface-bright transition-colors uppercase font-medium" href="#">
+                    View in Jira <span class="material-symbols-outlined text-[14px] align-middle">open_in_new</span>
+</a>
+</div>
+</aside>
+</div>
+<!-- BottomNavBar Component (Mobile Only) -->
+<nav class="bg-surface-container fixed bottom-0 left-0 w-full flex justify-around items-center px-sm pb-base z-50 rounded-t-full border-t-4 border-surface-container-highest md:hidden h-[72px]">
+<button class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-full p-xs scale-95 transition-transform w-[64px] font-medium">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">casino</span>
+<span class="font-label-sm text-label-sm mt-1 uppercase">Table</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-xs hover:text-primary transition-colors w-[64px] font-medium">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-sm text-label-sm mt-1 uppercase">Status</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-xs hover:text-primary transition-colors w-[64px] font-medium">
+<span class="material-symbols-outlined">token</span>
+<span class="font-label-sm text-label-sm mt-1 uppercase">Chips</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant p-xs hover:text-primary transition-colors w-[64px] font-medium">
+<span class="material-symbols-outlined">group</span>
+<span class="font-label-sm text-label-sm mt-1 uppercase">Team</span>
+</button>
+</nav>
+</body></html>
