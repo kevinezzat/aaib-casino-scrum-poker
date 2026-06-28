@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Environment secrets
+server/.env
+client/.env.local
+
+# Build output
+client/dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp

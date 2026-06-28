@@ -1,0 +1,383 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════════
+   Material Symbols
+   ═══════════════════════════════════════════════════════════════════ */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Keyframe Animations
+   ═══════════════════════════════════════════════════════════════════ */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+@keyframes chip-wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg); }
+  75% { transform: rotate(-3deg); }
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scale-in {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes card-flip {
+  0% { transform: rotateY(0deg); }
+  50% { transform: rotateY(90deg); }
+  100% { transform: rotateY(0deg); }
+}
+
+@keyframes reveal-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(218, 52, 55, 0.4); }
+  50% { box-shadow: 0 0 20px 4px rgba(218, 52, 55, 0.3); }
+}
+
+@keyframes chip-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  60% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes chip-select-bounce {
+  0% { transform: translateY(0); }
+  30% { transform: translateY(-8px); }
+  50% { transform: translateY(-4px) scale(1.05); }
+  70% { transform: translateY(-6px); }
+  100% { transform: translateY(-4px); }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Animation Utility Classes
+   ═══════════════════════════════════════════════════════════════════ */
+.animate-float            { animation: float 3s ease-in-out infinite; }
+.animate-slide-in-right   { animation: slide-in-right 0.5s ease-out forwards; }
+.animate-slide-up         { animation: slide-up 0.4s ease-out forwards; }
+.animate-fade-in          { animation: fade-in 0.6s ease-out forwards; }
+.animate-scale-in         { animation: scale-in 0.3s ease-out forwards; }
+.animate-reveal-glow      { animation: reveal-glow 2s ease-in-out infinite; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Live Dot (pulsing indicator)
+   ═══════════════════════════════════════════════════════════════════ */
+.live-dot {
+  position: relative;
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: inherit;
+  animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Vote Chip (desktop)
+   ═══════════════════════════════════════════════════════════════════ */
+.vote-chip {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.vote-chip:hover {
+  transform: scale(1.15);
+  animation: chip-wobble 0.4s ease-in-out;
+}
+.vote-chip.revealed {
+  animation: card-flip 0.6s ease-in-out;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Player Seat
+   ═══════════════════════════════════════════════════════════════════ */
+.player-seat {
+  transition: all 0.3s ease;
+}
+.player-seat:hover {
+  transform: scale(1.08);
+}
+.player-seat:hover .player-avatar {
+  border-color: var(--player-color, #6cf8bb);
+  border-width: 2px;
+}
+
+/* Stagger entrance */
+.player-seat:nth-child(1) { animation: scale-in 0.4s 0.1s ease-out both; }
+.player-seat:nth-child(2) { animation: scale-in 0.4s 0.2s ease-out both; }
+.player-seat:nth-child(3) { animation: scale-in 0.4s 0.3s ease-out both; }
+.player-seat:nth-child(4) { animation: scale-in 0.4s 0.4s ease-out both; }
+.player-seat:nth-child(5) { animation: scale-in 0.4s 0.5s ease-out both; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Table Felt Pattern
+   ═══════════════════════════════════════════════════════════════════ */
+.felt-pattern {
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% 40%, rgba(255,255,255,0.06) 0%, transparent 70%),
+    radial-gradient(circle at 20% 60%, rgba(255,255,255,0.03) 0%, transparent 40%),
+    radial-gradient(circle at 80% 60%, rgba(255,255,255,0.03) 0%, transparent 40%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Reveal Button
+   ═══════════════════════════════════════════════════════════════════ */
+.reveal-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.reveal-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 0; height: 0;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.5s, height 0.5s;
+}
+.reveal-btn:hover::before { width: 300px; height: 300px; }
+.reveal-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(218, 52, 55, 0.35);
+}
+.reveal-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(218, 52, 55, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Sidebar Tabs
+   ═══════════════════════════════════════════════════════════════════ */
+.sidebar-tab {
+  position: relative;
+  transition: all 0.2s ease;
+}
+.sidebar-tab::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 0; height: 60%;
+  transform: translateY(-50%);
+  background: #006c49; /* secondary */
+  border-radius: 0 2px 2px 0;
+  transition: width 0.2s ease;
+}
+.sidebar-tab:hover::before { width: 3px; }
+.sidebar-tab.active::before { width: 4px; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Nav Link underline
+   ═══════════════════════════════════════════════════════════════════ */
+.nav-link {
+  position: relative;
+  transition: all 0.2s ease;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 50%;
+  width: 0; height: 2px;
+  background: #b61722; /* primary */
+  transition: all 0.2s ease;
+  transform: translateX(-50%);
+}
+.nav-link:hover::after,
+.nav-link.active::after { width: 100%; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Timer text
+   ═══════════════════════════════════════════════════════════════════ */
+.timer-text { animation: timer-pulse 2s ease-in-out infinite; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Chip Stack (desktop pot)
+   ═══════════════════════════════════════════════════════════════════ */
+.chip-stack > div { transition: all 0.3s ease; }
+.chip-stack:hover > div:nth-child(1) { transform: translate(-3px, -3px); }
+.chip-stack:hover > div:nth-child(2) { transform: translate(0, -1px); }
+.chip-stack:hover > div:nth-child(3) { transform: translate(3px, 3px); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Status Pill
+   ═══════════════════════════════════════════════════════════════════ */
+.status-pill {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mobile Bottom Nav
+   ═══════════════════════════════════════════════════════════════════ */
+.mobile-nav-btn { transition: all 0.2s ease; }
+.mobile-nav-btn:active { transform: scale(0.92); }
+
+/* ═══════════════════════════════════════════════════════════════════
+   QR Button tooltip
+   ═══════════════════════════════════════════════════════════════════ */
+.qr-btn { position: relative; }
+.qr-btn::after {
+  content: 'Share session link';
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 10px;
+  background: #2d3133;
+  color: #fff;
+  font-size: 11px;
+  border-radius: 4px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.qr-btn:hover::after { opacity: 1; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mobile Estimate Chip Tray
+   ═══════════════════════════════════════════════════════════════════ */
+.estimate-chip {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1.5px solid #e4beba;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  animation: chip-pop 0.35s ease-out both;
+}
+.estimate-chip::before {
+  content: '';
+  position: absolute;
+  top: 5px; left: 5px; right: 5px; bottom: 5px;
+  border-radius: 50%;
+  border: 1.5px dashed #d8dadc;
+  transition: all 0.25s ease;
+}
+.estimate-chip:hover {
+  border-color: #b61722;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(182, 23, 34, 0.12);
+}
+.estimate-chip:hover::before { border-color: #b61722; }
+.estimate-chip:active { transform: scale(0.95); }
+
+.estimate-chip.selected {
+  border-color: #b61722;
+  background: #ffdad7;
+  animation: chip-select-bounce 0.4s ease-out forwards;
+  box-shadow: 0 4px 16px rgba(182, 23, 34, 0.2);
+}
+.estimate-chip.selected::before {
+  border-color: #b61722;
+  border-style: solid;
+}
+
+/* Stagger pop-in */
+.estimate-chip:nth-child(1) { animation-delay: 0.05s; }
+.estimate-chip:nth-child(2) { animation-delay: 0.10s; }
+.estimate-chip:nth-child(3) { animation-delay: 0.15s; }
+.estimate-chip:nth-child(4) { animation-delay: 0.20s; }
+.estimate-chip:nth-child(5) { animation-delay: 0.25s; }
+.estimate-chip:nth-child(6) { animation-delay: 0.30s; }
+.estimate-chip:nth-child(7) { animation-delay: 0.35s; }
+.estimate-chip:nth-child(8) { animation-delay: 0.40s; }
+.estimate-chip:nth-child(9) { animation-delay: 0.45s; }
+
+/* Responsive chip sizing */
+@media (max-width: 360px) {
+  .estimate-chip { width: 68px; height: 68px; }
+}
+@media (min-width: 400px) and (max-width: 767px) {
+  .estimate-chip { width: 88px; height: 88px; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   Place Chip Button
+   ═══════════════════════════════════════════════════════════════════ */
+.place-chip-btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.place-chip-btn::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 0; height: 0;
+  background: rgba(255,255,255,0.15);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.5s, height 0.5s;
+}
+.place-chip-btn:hover::before { width: 400px; height: 400px; }
+.place-chip-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+}
+.place-chip-btn:active { transform: translateY(0); }
+.place-chip-btn.placed { background: #006c49 !important; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Mobile Panel transitions
+   ═══════════════════════════════════════════════════════════════════ */
+.mobile-panel {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.mobile-panel.hidden { display: none !important; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   Global
+   ═══════════════════════════════════════════════════════════════════ */
+* { scroll-behavior: smooth; }
