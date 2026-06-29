@@ -10,7 +10,7 @@ import StatusPill from './StatusPill'
  * HTML ref: lines 569–654.
  */
 export default function PokerTable({ players, issue, revealed, onReveal }) {
-  const voteCount = players.filter((p) => p.vote).length
+  const voteCount = players.filter((p) => p.hasVoted || p.vote).length
 
   return (
     <main
@@ -68,7 +68,7 @@ export default function PokerTable({ players, issue, revealed, onReveal }) {
 
             {/* Player seats */}
             {players.map((player) => (
-              <PlayerSeat key={player.name} {...player} revealed={revealed} />
+              <PlayerSeat key={player._id} {...player} revealed={revealed} />
             ))}
           </div>
         </div>

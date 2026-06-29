@@ -31,7 +31,10 @@ export function MobileTablePanel({ issue, players, isActive }) {
                 className="flex items-center justify-between bg-surface-container-lowest border border-outline-variant rounded-lg px-sm py-base"
               >
                 <div className="flex items-center gap-sm">
-                  <div className={`w-8 h-8 rounded-full ${player.avatarBg} border border-outline-variant`} />
+                  <div
+                    className={`w-8 h-8 rounded-full ${player.avatarBg || ''} border border-outline-variant`}
+                    style={player.avatarBg ? {} : { backgroundColor: (player.color || '#6c748b') + '33' }}
+                  />
                   <span className="font-body-sm text-body-sm text-on-surface font-medium">{player.name}</span>
                 </div>
                 <span
@@ -63,11 +66,11 @@ export function MobileStatusPanel({ issue, players, isActive }) {
             <div className="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
               <div
                 className="h-full bg-secondary rounded-full"
-                style={{ width: `${(players.filter((p) => p.vote).length / players.length) * 100}%` }}
+                style={{ width: `${(players.filter((p) => p.hasVoted || p.vote).length / Math.max(players.length, 1)) * 100}%` }}
               />
             </div>
             <span className="font-label-md text-label-md text-secondary">
-              {players.filter((p) => p.vote).length}/{players.length}
+              {players.filter((p) => p.hasVoted || p.vote).length}/{players.length}
             </span>
           </div>
           <p className="font-body-sm text-body-sm text-on-surface-variant">
@@ -106,7 +109,10 @@ export function MobileTeamPanel({ players, isActive }) {
           <div className="flex flex-col gap-sm">
             {players.map((player, i) => (
               <div key={player.name} className="flex items-center gap-sm p-base rounded-lg bg-surface-container-low">
-                <div className={`w-10 h-10 rounded-full ${player.avatarBg} border-2 border-outline-variant`} />
+                <div
+                  className={`w-10 h-10 rounded-full ${player.avatarBg || ''} border-2 border-outline-variant`}
+                  style={player.avatarBg ? {} : { backgroundColor: (player.color || '#6c748b') + '33' }}
+                />
                 <div className="flex-1">
                   <span className="font-body-sm text-body-sm text-on-surface font-semibold block">{player.name}</span>
                   <span className="font-label-sm text-label-sm text-on-surface-variant">{roles[i] ?? 'Developer'}</span>

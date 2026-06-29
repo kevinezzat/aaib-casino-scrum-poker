@@ -41,7 +41,8 @@ export default function PlayerSeat({
     .toUpperCase()
     .slice(0, 2)
 
-  const isRevealed = revealed && vote
+  const hasVotedMarker = vote === '✓'
+  const isRevealed = revealed && vote && !hasVotedMarker
 
   return (
     <div
@@ -50,9 +51,10 @@ export default function PlayerSeat({
     >
       {/* Enhanced avatar: 44px + monogram + coloured glow */}
       <div
-        className={`player-avatar w-11 h-11 rounded-full border-2 border-outline-variant ${avatarBg} mb-1 transition-all flex items-center justify-center text-xs font-bold text-on-surface/70`}
+        className={`player-avatar w-11 h-11 rounded-full border-2 border-outline-variant ${avatarBg || ''} mb-1 transition-all flex items-center justify-center text-xs font-bold text-on-surface/70`}
         style={{
           boxShadow: `0 0 0 3px ${color}55, 0 0 12px ${color}33`,
+          ...(avatarBg ? {} : { backgroundColor: color + '33' }),
         }}
       >
         {initials}
@@ -65,15 +67,20 @@ export default function PlayerSeat({
 
       {/* Vote chip */}
       <div
-        className={`${CHIP_CLASSES[position]} ${chipBorderColor} ${
+        className={`${CHIP_CLASSES[position]} ${chipBorderColor || ''} ${
           isRevealed
             ? 'border-solid bg-secondary-container text-on-secondary-container border-secondary-fixed'
+            : hasVotedMarker
+            ? 'border-solid border-secondary/50'
             : 'border-dashed'
         } ${revealed ? 'vote-chip revealed' : ''}`}
         data-player={name.toLowerCase()}
-        style={isRevealed ? { fontWeight: 800, fontSize: '16px' } : {}}
+        style={{
+          ...(isRevealed ? { fontWeight: 800, fontSize: '16px' } : {}),
+          ...(chipBorderColor ? {} : { borderColor: color + '88' }),
+        }}
       >
-        {isRevealed ? vote : '?'}
+        {isRevealed ? vote : hasVotedMarker ? '✓' : '?'}
       </div>
     </div>
   )

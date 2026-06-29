@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useSocket } from '../hooks/useSocket'
 import { usePokerTable } from '../hooks/usePokerTable'
 import TopNavBar from '../components/TopNavBar'
 import PokerTable from '../components/poker-table/PokerTable'
@@ -8,77 +9,73 @@ import MobileChipTray from '../components/mobile/MobileChipTray'
 import MobileNavBar from '../components/mobile/MobileNavBar'
 import { MobileTablePanel, MobileStatusPanel, MobileTeamPanel } from '../components/mobile/MobilePanels'
 
-// ── Stub data (Phase 2 static; replaced by live data in Phase 4) ──────────────
-const STUB = {
-  issue: {
-    key: 'AUTH-204',
-    title: 'Add OAuth login flow',
-    description:
-      "As a user, I want to be able to log in using my Google or Microsoft account so that I don't have to remember another password.",
-  },
-  players: [
-    {
-      name: 'Alex',
-      color: '#6c748b',
-      avatarBg: 'bg-tertiary-container',
-      chipBorderColor: 'border-tertiary-container',
-      position: 'left',
-      vote: '3',
-    },
-    {
-      name: 'Sam',
-      color: '#ffdad7',
-      avatarBg: 'bg-primary-fixed',
-      chipBorderColor: 'border-primary-fixed',
-      position: 'right',
-      vote: '5',
-    },
-    {
-      name: 'Jordan',
-      color: '#6cf8bb',
-      avatarBg: 'bg-secondary-fixed',
-      chipBorderColor: 'border-secondary-fixed',
-      position: 'bottom-left',
-      vote: '5',
-    },
-    {
-      name: 'Casey',
-      color: '#bec6e0',
-      avatarBg: 'bg-tertiary-fixed-dim',
-      chipBorderColor: 'border-tertiary-fixed-dim',
-      position: 'bottom-right',
-      vote: '8',
-    },
-    {
-      name: 'Taylor',
-      color: '#8f6f6d',
-      avatarBg: 'bg-outline',
-      chipBorderColor: 'border-outline',
-      position: 'bottom-center',
-      vote: '5',
-    },
-  ],
+// ── Stub issue data (no issue CRUD yet in Phase 1) ────────────────
+const STUB_ISSUE = {
+  key: 'AUTH-204',
+  title: 'Add OAuth login flow',
+  description:
+    "As a user, I want to be able to log in using my Google or Microsoft account so that I don't have to remember another password.",
 }
 
 export default function PokerTablePage() {
   const { code } = useParams()
   const navigate = useNavigate()
-  
-  const [localPlayer, setLocalPlayer] = useState(null)
 
+  const [localPlayer, setLocalPlayer] = useState(null)
+  const [sessionId, setSessionId] = useState(null)
+  const [isHost, setIsHost] = useState(false)
+  const [joinError, setJoinError] = useState(null)
+  const joiningRef = useRef(false)
+
+  // ── Socket connection ───────────────────────────────────────────
+  const socket = useSocket()
+
+  // ── Join session once connected ─────────────────────────────────
   useEffect(() => {
-    // 1. Check if the user has an identity in this browser
     const playerName = sessionStorage.getItem('playerName')
-    
+
     if (!playerName) {
-      // Missing identity — they must have navigated here directly
       navigate(`/join/${code}`)
       return
     }
 
     setLocalPlayer(playerName)
-    // Future Phase: socket.emit('join-session', { roomCode: code, playerName, role: 'voter' })
   }, [code, navigate])
+
+  // Join the socket room once we have a player name and are connected
+  useEffect(() => {
+    if (!localPlayer || !socket.isConnected || sessionId || joiningRef.current) return
+
+    joiningRef.current = true
+
+    const role = sessionStorage.getItem('isHost') === 'true' ? 'voter' : 'voter'
+
+    socket
+      .joinSession(code, localPlayer, role)
+      .then((response) => {
+        setSessionId(response.sessionId)
+        setIsHost(
+          response.hostId === response.participantId ||
+          sessionStorage.getItem('isHost') === 'true'
+        )
+      })
+      .catch((err) => {
+        console.error('[PokerTablePage] join failed:', err.message)
+        setJoinError(err.message)
+        joiningRef.current = false // allow retry on error
+      })
+  }, [localPlayer, socket.isConnected, sessionId, code, socket.joinSession])
+
+  // ── Poker table logic (wired to socket) ─────────────────────────
+  const socketHookData = {
+    participants: socket.participants,
+    revealedVotes: socket.revealedVotes,
+    roundStatus: socket.roundStatus,
+    sessionId,
+    revealChips: socket.revealChips,
+    newRound: socket.newRound,
+    placeChip: socket.placeChip,
+  }
 
   const {
     timerSeconds,
@@ -87,17 +84,47 @@ export default function PokerTablePage() {
     selectedChip,
     chipPlaced,
     activeMobilePanel,
+    players,
     handlers,
-  } = usePokerTable()
+  } = usePokerTable({ socketHook: socketHookData })
 
-  // Wait until localPlayer is resolved before rendering the table
+  // ── Loading / error states ──────────────────────────────────────
   if (!localPlayer) return null
+
+  if (joinError) {
+    return (
+      <div className="bg-surface-container-lowest min-h-screen flex items-center justify-center p-md">
+        <div className="text-center max-w-sm">
+          <span className="material-symbols-outlined text-error text-[48px] mb-sm">error</span>
+          <h1 className="font-headline-md text-on-surface mb-xs">Failed to Join</h1>
+          <p className="font-body-md text-on-surface-variant mb-md">{joinError}</p>
+          <button
+            onClick={() => navigate(`/join/${code}`)}
+            className="text-primary font-label-md uppercase hover:underline"
+          >
+            Try again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!sessionId) {
+    return (
+      <div className="bg-surface-container-lowest min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-sm">
+          <span className="material-symbols-outlined animate-spin text-[32px] text-secondary">sync</span>
+          <span className="font-body-md text-on-surface-variant">Joining room {code}…</span>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="bg-surface-container-lowest text-on-surface h-screen overflow-hidden flex flex-col font-sans">
       {/* Fixed top nav */}
       <TopNavBar
-        issueKey={STUB.issue.key}
+        issueKey={STUB_ISSUE.key}
         timerSeconds={timerSeconds}
       />
 
@@ -106,27 +133,27 @@ export default function PokerTablePage() {
 
         {/* Desktop poker table */}
         <PokerTable
-          players={STUB.players}
-          issue={STUB.issue}
+          players={players}
+          issue={STUB_ISSUE}
           revealed={revealed}
-          onReveal={handlers.handleReveal}
+          onReveal={revealed ? handlers.handleNewRound : handlers.handleReveal}
         />
 
         {/* Mobile panels */}
         <MobileTablePanel
-          issue={STUB.issue}
-          players={STUB.players}
+          issue={STUB_ISSUE}
+          players={players}
           isActive={activeMobilePanel === 'mobile-table-panel'}
         />
         <MobileStatusPanel
-          issue={STUB.issue}
-          players={STUB.players}
+          issue={STUB_ISSUE}
+          players={players}
           isActive={activeMobilePanel === 'mobile-status-panel'}
         />
         <MobileChipTray
-          issueKey={STUB.issue.key}
-          issueTitle={STUB.issue.title}
-          issueDescription={STUB.issue.description}
+          issueKey={STUB_ISSUE.key}
+          issueTitle={STUB_ISSUE.title}
+          issueDescription={STUB_ISSUE.description}
           selectedChip={selectedChip}
           chipPlaced={chipPlaced}
           onChipSelect={handlers.handleChipSelect}
@@ -134,14 +161,14 @@ export default function PokerTablePage() {
           isActive={activeMobilePanel === 'mobile-chips-panel'}
         />
         <MobileTeamPanel
-          players={STUB.players}
+          players={players}
           isActive={activeMobilePanel === 'mobile-team-panel'}
         />
 
         {/* Desktop right sidebar */}
         <IssueSidebar
-          issueKey={STUB.issue.key}
-          issueTitle={STUB.issue.title}
+          issueKey={STUB_ISSUE.key}
+          issueTitle={STUB_ISSUE.title}
           activeTab={activeSidebarTab}
           onTabChange={handlers.handleSidebarTab}
         />
