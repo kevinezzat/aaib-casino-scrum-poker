@@ -35,9 +35,18 @@ app.use(
 );
 
 // ── CORS ──────────────────────────────────────────────────────────
+const CLIENT_ORIGIN_ENV = process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://localhost:3001';
+const allowedOrigins = CLIENT_ORIGIN_ENV.split(',').map(o => o.trim().replace(/\/$/, ''));
+
 app.use(
   cors({
-    origin: CLIENT_ORIGIN,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );
