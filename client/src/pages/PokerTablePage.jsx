@@ -8,6 +8,8 @@ import IssueSidebar from '../components/sidebar/IssueSidebar'
 import MobileChipTray from '../components/mobile/MobileChipTray'
 import MobileNavBar from '../components/mobile/MobileNavBar'
 import { MobileTablePanel, MobileStatusPanel, MobileTeamPanel } from '../components/mobile/MobilePanels'
+import QrPopover from '../components/QrPopover'
+import WelcomeQrModal from '../components/WelcomeQrModal'
 
 // ── Stub issue data (no issue CRUD yet in Phase 1) ────────────────
 const STUB_ISSUE = {
@@ -25,6 +27,8 @@ export default function PokerTablePage() {
   const [sessionId, setSessionId] = useState(null)
   const [isHost, setIsHost] = useState(false)
   const [joinError, setJoinError] = useState(null)
+  const [showQr, setShowQr] = useState(false)
+  const [showWelcomeQr, setShowWelcomeQr] = useState(false)
   const joiningRef = useRef(false)
 
   // ── Socket connection ───────────────────────────────────────────
@@ -48,16 +52,17 @@ export default function PokerTablePage() {
 
     joiningRef.current = true
 
-    const role = sessionStorage.getItem('isHost') === 'true' ? 'voter' : 'voter'
+    const normalizedCode = code.toUpperCase()
+    const hostToken = localStorage.getItem(`scrum_host_${normalizedCode}`)
 
     socket
-      .joinSession(code, localPlayer, role)
+      .joinSession(normalizedCode, localPlayer, hostToken)
       .then((response) => {
         setSessionId(response.sessionId)
-        setIsHost(
-          response.hostId === response.participantId ||
-          sessionStorage.getItem('isHost') === 'true'
-        )
+        const hostConfirmed = response.isHost === true
+        setIsHost(hostConfirmed)
+        // Auto-open welcome modal for the host on first join
+        if (hostConfirmed) setShowWelcomeQr(true)
       })
       .catch((err) => {
         console.error('[PokerTablePage] join failed:', err.message)
@@ -85,8 +90,13 @@ export default function PokerTablePage() {
     chipPlaced,
     activeMobilePanel,
     players,
+    dealerParticipant,
     handlers,
   } = usePokerTable({ socketHook: socketHookData })
+
+  // Dealer name: prefer the live socket participant, fall back to local player name
+  // so the host sees their name immediately before the round-trip completes.
+  const dealerName = dealerParticipant?.name ?? (isHost ? localPlayer : null)
 
   // ── Loading / error states ──────────────────────────────────────
   if (!localPlayer) return null
@@ -126,6 +136,22 @@ export default function PokerTablePage() {
       <TopNavBar
         issueKey={STUB_ISSUE.key}
         timerSeconds={timerSeconds}
+        onQrClick={() => setShowQr((v) => !v)}
+      />
+
+      {/* QR popover (nav button) */}
+      <QrPopover
+        open={showQr}
+        sessionCode={code}
+        onClose={() => setShowQr(false)}
+      />
+
+      {/* Welcome modal — host only, auto-opens on first join */}
+      <WelcomeQrModal
+        open={showWelcomeQr}
+        sessionCode={code}
+        hostName={localPlayer}
+        onClose={() => setShowWelcomeQr(false)}
       />
 
       {/* Main content — below 48px nav */}
@@ -136,6 +162,9 @@ export default function PokerTablePage() {
           players={players}
           issue={STUB_ISSUE}
           revealed={revealed}
+          isHost={isHost}
+          sessionCode={code}
+          dealerName={dealerName}
           onReveal={revealed ? handlers.handleNewRound : handlers.handleReveal}
         />
 

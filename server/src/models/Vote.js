@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
  * Vote — a single chip placement by a Participant on a story item.
  *
  * value: Mixed to support:
- *   - Fibonacci numbers: 1, 2, 3, 5, 8, 13, 21
+ *   - Fibonacci numbers: 1, 2, 3, 5, 8, 13, 20
  *   - Special chips:     '?'  (unknown)  |  'coffee' (need a break)
  *
  * itemId: the Jira issue key or any string identifying the story

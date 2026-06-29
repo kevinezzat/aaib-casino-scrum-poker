@@ -36,7 +36,7 @@ export default function CreateSessionPage() {
 
       // Save local identity
       sessionStorage.setItem('playerName', formData.hostName.trim())
-      sessionStorage.setItem('isHost', 'true') // Note: simple client-side flag for now, easily bypassed
+      localStorage.setItem(`scrum_host_${data.roomCode}`, data.hostToken)
 
       // Navigate to the table
       navigate(`/session/${data.roomCode}`)

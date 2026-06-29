@@ -7,7 +7,7 @@ const DECK = [
   { value: '5', label: '5' },
   { value: '8', label: '8' },
   { value: '13', label: '13' },
-  { value: '21', label: '21' },
+  { value: '20', label: '20' },
   { value: '?', label: '?' },
   { value: 'coffee', icon: 'coffee' },
 ]
@@ -29,10 +29,10 @@ export default function MobileChipTray({
   const placeLabel = chipPlaced
     ? '✓ Chip Placed!'
     : selectedChip === 'coffee'
-    ? 'Need a Break'
-    : selectedChip
-    ? `Place Chip · ${selectedChip}`
-    : 'Place Chip'
+      ? 'Need a Break'
+      : selectedChip
+        ? `Place Chip · ${selectedChip}`
+        : 'Place Chip'
 
   return (
     <div
@@ -65,9 +65,8 @@ export default function MobileChipTray({
                 <button
                   key={chip.value}
                   aria-label={`Estimate ${chip.value}`}
-                  className={`estimate-chip ${isSelected ? 'selected' : ''} ${
-                    chipPlaced && !isSelected ? 'opacity-40 pointer-events-none' : ''
-                  }`}
+                  className={`estimate-chip ${isSelected ? 'selected' : ''} ${chipPlaced && !isSelected ? 'opacity-40 pointer-events-none' : ''
+                    }`}
                   data-value={chip.value}
                   onClick={() => onChipSelect(chip.value)}
                 >
@@ -90,9 +89,8 @@ export default function MobileChipTray({
         <div className="mt-auto pt-sm w-full">
           <button
             id="btn-place-chip"
-            className={`place-chip-btn w-full text-white font-label-md text-label-md py-4 rounded-xl flex items-center justify-center gap-2 font-bold tracking-wide uppercase transition-all ${
-              chipPlaced ? 'bg-secondary' : 'bg-[#ef4444]'
-            }`}
+            className={`place-chip-btn w-full text-white font-label-md text-label-md py-4 rounded-xl flex items-center justify-center gap-2 font-bold tracking-wide uppercase transition-all ${chipPlaced ? 'bg-secondary' : 'bg-[#ef4444]'
+              }`}
             style={{ opacity: selectedChip ? 1 : 0.5 }}
             disabled={!selectedChip}
             onClick={onPlaceChip}

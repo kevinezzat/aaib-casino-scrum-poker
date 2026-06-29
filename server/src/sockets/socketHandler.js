@@ -70,7 +70,7 @@ function registerSocketEvents(io) {
     // ── join-session ──────────────────────────────────────────────
     socket.on('join-session', async (payload, callback) => {
       try {
-        const { roomCode, playerName, role = 'voter' } = payload || {};
+        const { roomCode, playerName, hostToken } = payload || {};
 
         if (!roomCode || !playerName) {
           return callback?.({ error: 'roomCode and playerName are required' });
@@ -84,49 +84,67 @@ function registerSocketEvents(io) {
           return callback?.({ error: 'Session not found' });
         }
 
-        // ── Clean up orphaned participants ─────────────────────────
-        // Remove any previous participant record for the same name in
-        // this session (handles page refresh / reconnect).
-        await Participant.deleteMany({
+        // Verify if this user is the host using the secure token
+        const isHost = Boolean(hostToken && session.hostToken === hostToken);
+        const role = isHost ? 'dealer' : 'voter';
+
+        // Instead of blindly deleting, we update the existing participant if they match by name.
+        // This keeps their `_id` and any placed votes intact across refreshes.
+        let participant = await Participant.findOne({
           sessionId: session._id,
           name: playerName.trim(),
         });
 
-        // Also purge participants whose sockets are no longer connected
-        // (stale records from server restarts or ungraceful disconnects).
+        if (participant) {
+          participant.socketId = socket.id;
+          participant.role = role;
+          await participant.save();
+        } else {
+          // Get existing colors for color-picking
+          const remaining = await Participant.find({ sessionId: session._id })
+            .select('color')
+            .lean();
+          const existingColors = remaining.map((p) => p.color);
+
+          participant = await Participant.create({
+            sessionId: session._id,
+            name: playerName.trim(),
+            role,
+            socketId: socket.id,
+            color: pickColor(existingColors),
+          });
+        }
+
+        // ── Clean up orphaned participants (except the one joining) ─────────
         const allParticipants = await Participant.find({ sessionId: session._id })
-          .select('_id socketId color')
+          .select('_id socketId')
           .lean();
+
         const connectedSocketIds = new Set(
           Array.from(await io.in(roomCode.toUpperCase()).fetchSockets()).map(
             (s) => s.id
           )
         );
+
         const orphanIds = allParticipants
-          .filter((p) => p.socketId && !connectedSocketIds.has(p.socketId))
+          .filter(
+            (p) =>
+              p.socketId &&
+              !connectedSocketIds.has(p.socketId) &&
+              p._id.toString() !== participant._id.toString()
+          )
           .map((p) => p._id);
+
         if (orphanIds.length > 0) {
           await Participant.deleteMany({ _id: { $in: orphanIds } });
           await Vote.deleteMany({ participantId: { $in: orphanIds } });
         }
 
-        // Get existing colors (after cleanup) for color-picking
-        const remaining = await Participant.find({ sessionId: session._id })
-          .select('color')
-          .lean();
-        const existingColors = remaining.map((p) => p.color);
-
-        // Create participant in DB
-        const participant = await Participant.create({
-          sessionId: session._id,
-          name: playerName.trim(),
-          role,
-          socketId: socket.id,
-          color: pickColor(existingColors),
-        });
-
-        // If this is the first participant and no host is set, make them host
-        if (!session.hostId) {
+        // Update session hostId if this is the confirmed host
+        if (isHost && session.hostId !== participant._id.toString()) {
+          session.hostId = participant._id.toString();
+          await session.save();
+        } else if (!session.hostId && isHost) {
           session.hostId = participant._id.toString();
           await session.save();
         }
@@ -153,6 +171,7 @@ function registerSocketEvents(io) {
           participantId: participant._id,
           sessionId: session._id,
           hostId: session.hostId,
+          isHost,
           deckType: session.deckType,
           status: session.status,
         });

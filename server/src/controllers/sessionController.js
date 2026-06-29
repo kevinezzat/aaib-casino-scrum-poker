@@ -36,16 +36,20 @@ async function createSession(req, res) {
     }
 
     const roomCode = await uniqueRoomCode();
+    // Generate a secure token to identify the host
+    const hostToken = require('crypto').randomBytes(16).toString('hex');
 
     const session = await Session.create({
       name: name.trim(),
       roomCode,
+      hostToken,
       deckType: deckType || 'fibonacci',
     });
 
     return res.status(201).json({
       sessionId: session._id,
       roomCode: session.roomCode,
+      hostToken: session.hostToken,
     });
   } catch (err) {
     console.error('[POST /api/sessions]', err);

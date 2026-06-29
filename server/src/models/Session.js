@@ -26,6 +26,10 @@ const sessionSchema = new mongoose.Schema(
       type: String, // Participant._id as string (set after first participant created)
       default: null,
     },
+    hostToken: {
+      type: String, // Secret token given to the creator to prove they are the host
+      required: true,
+    },
     roomCode: {
       type: String,
       required: true,

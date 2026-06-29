@@ -4,7 +4,7 @@ import React from 'react'
  * CenterPot — issue card, 3D chip stack, and reveal/new-round button.
  * Enhanced chip stack with depth layers and spring animation.
  */
-export default function CenterPot({ issueKey, issueTitle, revealed, onReveal }) {
+export default function CenterPot({ issueKey, issueTitle, revealed, onReveal, isHost }) {
   return (
     <div className="flex flex-col items-center gap-sm z-10">
       {/* Issue card */}
@@ -38,18 +38,20 @@ export default function CenterPot({ issueKey, issueTitle, revealed, onReveal }) 
         </div>
       </div>
 
-      {/* Reveal / New Round button */}
-      <button
-        id="btn-reveal"
-        className={`reveal-btn px-md py-sm rounded-lg font-label-md text-label-md uppercase mt-xs font-bold tracking-wider ${
-          revealed
-            ? 'bg-secondary text-on-secondary'
-            : 'bg-primary-container text-on-primary-container animate-reveal-glow'
-        }`}
-        onClick={onReveal}
-      >
-        {revealed ? 'New Round' : 'Reveal all chips'}
-      </button>
+      {/* Reveal / New Round button — host only */}
+      {isHost && (
+        <button
+          id="btn-reveal"
+          className={`reveal-btn px-md py-sm rounded-lg font-label-md text-label-md uppercase mt-xs font-bold tracking-wider ${
+            revealed
+              ? 'bg-secondary text-on-secondary'
+              : 'bg-primary-container text-on-primary-container animate-reveal-glow'
+          }`}
+          onClick={onReveal}
+        >
+          {revealed ? 'New Round' : 'Reveal all chips'}
+        </button>
+      )}
     </div>
   )
 }

@@ -31,7 +31,7 @@ const participantSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['voter', 'spectator'],
+      enum: ['voter', 'spectator', 'dealer'],
       default: 'voter',
     },
     socketId: {
