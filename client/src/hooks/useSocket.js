@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { io as ioClient } from 'socket.io-client'
 
-const SERVER_URL = 'http://localhost:3001'
+const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 /**
  * useSocket — centralises all Socket.IO logic for the Scrum Poker app.

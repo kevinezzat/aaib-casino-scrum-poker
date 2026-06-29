@@ -16,7 +16,8 @@ export default function JoinSessionPage() {
   useEffect(() => {
     async function fetchSession() {
       try {
-        const res = await fetch(`http://localhost:3001/api/sessions/${code}`)
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+        const res = await fetch(`${API_URL}/api/sessions/${code}`)
         const data = await res.json()
         
         if (!res.ok) {

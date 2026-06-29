@@ -19,7 +19,8 @@ export default function CreateSessionPage() {
     setError(null)
 
     try {
-      const res = await fetch('http://localhost:3001/api/sessions', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+      const res = await fetch(`${API_URL}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
