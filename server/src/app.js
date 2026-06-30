@@ -17,6 +17,9 @@ const path = require('path');
 const connectDB = require('./config/db');
 const createServer = require('./config/server');
 const sessionRouter = require('./routes/sessions');
+const jiraAuthRouter = require('./routes/jiraAuth');
+const jiraRouter = require('./routes/jira');
+const JiraReauthRequiredError = require('./errors/JiraReauthRequiredError');
 
 // ── Express app ───────────────────────────────────────────────────
 const app = express();
@@ -76,6 +79,8 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 // ── Routes ────────────────────────────────────────────────────────
 app.use('/api/sessions', sessionRouter);
+app.use('/api/jira/auth', jiraAuthRouter);
+app.use('/api/jira', jiraRouter);
 
 // Health check
 app.get('/api/health', (_req, res) =>
@@ -90,6 +95,16 @@ app.use((_req, res) => {
 // ── Global error handler ──────────────────────────────────────────
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
+  // ── Jira reauth required (refresh token expired/revoked) ─────────
+  if (err instanceof JiraReauthRequiredError) {
+    console.warn('[error] Jira reauth required for session:', err.sessionId, '-', err.message);
+    return res.status(401).json({
+      error: 'jira_reauth_required',
+      message: 'Your Jira connection has expired. Please reconnect.',
+      connectUrl: '/api/jira/auth/connect',
+    });
+  }
+
   console.error('[error]', err.stack || err.message);
 
   const statusCode = err.statusCode || 500;
