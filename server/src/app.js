@@ -35,7 +35,7 @@ app.use(
 );
 
 // ── CORS ──────────────────────────────────────────────────────────
-const CLIENT_ORIGIN_ENV = process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://localhost:3001';
+const CLIENT_ORIGIN_ENV = CLIENT_ORIGIN || 'http://localhost:5173,http://localhost:3001';
 const allowedOrigins = CLIENT_ORIGIN_ENV.split(',').map(o => o.trim().replace(/\/$/, ''));
 
 app.use(
