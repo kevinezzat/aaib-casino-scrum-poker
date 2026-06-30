@@ -122,9 +122,15 @@ export function usePokerTable({ socketHook } = {}) {
   // ── Build players list from live participants ─────────────────────
   // Dealer (host) does not sit at the table — they are the DealerCharacter
   const allParticipants = socketHook?.participants || []
-  const players = allParticipants
-    .filter((p) => p.role !== 'dealer')
-    .map((p, i) => mapParticipantToPlayer(p, i, socketHook?.revealedVotes))
+
+  // Voters sit at the table with chip slots
+  const voterParticipants = allParticipants.filter((p) => p.role === 'voter')
+  const players = voterParticipants.map((p, i) =>
+    mapParticipantToPlayer(p, i, socketHook?.revealedVotes)
+  )
+
+  // Spectators watch from the sideline — pass raw participant data
+  const spectators = allParticipants.filter((p) => p.role === 'spectator')
 
   // Expose the dealer participant so their name can be shown on the avatar
   const dealerParticipant = allParticipants.find((p) => p.role === 'dealer') || null
@@ -137,6 +143,7 @@ export function usePokerTable({ socketHook } = {}) {
     chipPlaced,
     activeMobilePanel,
     players,
+    spectators,
     dealerParticipant,
     handlers: {
       handleReveal,

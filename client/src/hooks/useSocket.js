@@ -92,7 +92,7 @@ export function useSocket() {
    * @param {'voter'|'spectator'} role
    * @returns {Promise<object>} — server acknowledgement
    */
-  const joinSession = useCallback((roomCode, playerName, hostToken) => {
+  const joinSession = useCallback((roomCode, playerName, hostToken, role = 'voter') => {
     return new Promise((resolve, reject) => {
       const socket = socketRef.current
       if (!socket?.connected) {
@@ -100,7 +100,7 @@ export function useSocket() {
       }
       socket.emit(
         'join-session',
-        { roomCode, playerName, hostToken },
+        { roomCode, playerName, hostToken, role },
         (response) => {
           if (response?.error) {
             reject(new Error(response.error))

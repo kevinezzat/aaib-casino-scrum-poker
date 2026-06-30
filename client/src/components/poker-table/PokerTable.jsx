@@ -9,7 +9,8 @@ import StatusPill from './StatusPill'
  * Enhanced: multi-ring border with gold/dark trim, richer felt vignette.
  * HTML ref: lines 569–654.
  */
-export default function PokerTable({ players, issue, revealed, onReveal, isHost, sessionCode, dealerName }) {
+export default function PokerTable({ players, spectators = [], issue, revealed, onReveal, isHost, isSpectator, sessionCode, dealerName }) {
+  // Only count voters toward the vote tally
   const voteCount = players.filter((p) => p.hasVoted || p.vote).length
 
   return (
@@ -18,7 +19,7 @@ export default function PokerTable({ players, issue, revealed, onReveal, isHost,
       className="hidden md:flex flex-1 relative items-center justify-center bg-surface-container-lowest p-lg overflow-hidden"
     >
       {/* Status pill */}
-      <StatusPill voteCount={voteCount} totalCount={players.length} sessionCode={sessionCode} />
+      <StatusPill voteCount={voteCount} totalCount={players.length} sessionCode={sessionCode} spectators={spectators} />
 
       {/* Table shell — enhanced multi-ring border */}
       <div

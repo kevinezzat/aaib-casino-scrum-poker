@@ -24,6 +24,7 @@ export default function PokerTablePage() {
   const navigate = useNavigate()
 
   const [localPlayer, setLocalPlayer] = useState(null)
+  const [playerRole, setPlayerRole] = useState('voter')
   const [sessionId, setSessionId] = useState(null)
   const [isHost, setIsHost] = useState(false)
   const [joinError, setJoinError] = useState(null)
@@ -44,6 +45,7 @@ export default function PokerTablePage() {
     }
 
     setLocalPlayer(playerName)
+    setPlayerRole(sessionStorage.getItem('playerRole') || 'voter')
   }, [code, navigate])
 
   // Join the socket room once we have a player name and are connected
@@ -56,7 +58,7 @@ export default function PokerTablePage() {
     const hostToken = localStorage.getItem(`scrum_host_${normalizedCode}`)
 
     socket
-      .joinSession(normalizedCode, localPlayer, hostToken)
+      .joinSession(normalizedCode, localPlayer, hostToken, playerRole)
       .then((response) => {
         setSessionId(response.sessionId)
         const hostConfirmed = response.isHost === true
@@ -69,7 +71,7 @@ export default function PokerTablePage() {
         setJoinError(err.message)
         joiningRef.current = false // allow retry on error
       })
-  }, [localPlayer, socket.isConnected, sessionId, code, socket.joinSession])
+  }, [localPlayer, socket.isConnected, sessionId, code, socket.joinSession, playerRole])
 
   // ── Poker table logic (wired to socket) ─────────────────────────
   const socketHookData = {
@@ -90,6 +92,7 @@ export default function PokerTablePage() {
     chipPlaced,
     activeMobilePanel,
     players,
+    spectators,
     dealerParticipant,
     handlers,
   } = usePokerTable({ socketHook: socketHookData })
@@ -97,6 +100,9 @@ export default function PokerTablePage() {
   // Dealer name: prefer the live socket participant, fall back to local player name
   // so the host sees their name immediately before the round-trip completes.
   const dealerName = dealerParticipant?.name ?? (isHost ? localPlayer : null)
+
+  // Is the current user a spectator?
+  const isSpectator = playerRole === 'spectator'
 
   // ── Loading / error states ──────────────────────────────────────
   if (!localPlayer) return null
@@ -160,9 +166,11 @@ export default function PokerTablePage() {
         {/* Desktop poker table */}
         <PokerTable
           players={players}
+          spectators={spectators}
           issue={STUB_ISSUE}
           revealed={revealed}
           isHost={isHost}
+          isSpectator={isSpectator}
           sessionCode={code}
           dealerName={dealerName}
           onReveal={revealed ? handlers.handleNewRound : handlers.handleReveal}
@@ -188,6 +196,7 @@ export default function PokerTablePage() {
           onChipSelect={handlers.handleChipSelect}
           onPlaceChip={handlers.handlePlaceChip}
           isActive={activeMobilePanel === 'mobile-chips-panel'}
+          isSpectator={isSpectator}
         />
         <MobileTeamPanel
           players={players}
