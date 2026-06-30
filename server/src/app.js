@@ -44,13 +44,13 @@ app.use(
       if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
         callback(null, true);
       } else {
+        console.log('[cors] allowedOrigins:', allowedOrigins);
         callback(new Error('Not allowed by CORS'));
       }
     },
     credentials: true,
   })
 );
-console.log('[cors] allowedOrigins:', allowedOrigins);
 // ── Rate limiting ─────────────────────────────────────────────────
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
