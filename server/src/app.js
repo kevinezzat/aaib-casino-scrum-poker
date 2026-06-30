@@ -50,7 +50,7 @@ app.use(
     credentials: true,
   })
 );
-
+console.log('[cors] allowedOrigins:', allowedOrigins);
 // ── Rate limiting ─────────────────────────────────────────────────
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
