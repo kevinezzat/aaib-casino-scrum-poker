@@ -3,10 +3,12 @@ import { QRCodeSVG } from 'qrcode.react'
 
 /**
  * StatusPill — floating bottom-left status indicator on the desktop table view.
- * HTML ref: lines 572–582.
- * Now includes an inline QR popover on the "Scan to join" button.
+ * Now includes:
+ *   - vote count
+ *   - spectator badge with hover tooltip showing names
+ *   - inline QR popover on the "Scan to join" button.
  */
-export default function StatusPill({ voteCount, totalCount, sessionCode }) {
+export default function StatusPill({ voteCount, totalCount, sessionCode, spectators = [] }) {
   const [showQr, setShowQr] = useState(false)
   const joinUrl = sessionCode
     ? `${window.location.origin}/join/${sessionCode}`
@@ -19,12 +21,75 @@ export default function StatusPill({ voteCount, totalCount, sessionCode }) {
     >
       {/* The pill itself */}
       <div className="bg-surface-container/90 border border-outline-variant rounded-full flex items-center gap-md px-sm py-xs">
+        {/* Vote count */}
         <div className="flex items-center gap-xs">
           <span className="w-2 h-2 rounded-full bg-secondary" />
           <span className="font-body-sm text-body-sm text-on-surface font-medium" id="vote-count">
             {voteCount} / {totalCount} voted
           </span>
         </div>
+
+        {/* Spectator badge — only shown if there are spectators */}
+        {spectators.length > 0 && (
+          <>
+            <div className="w-[1px] h-4 bg-outline-variant" />
+            <div className="relative group">
+              <button
+                id="spectator-badge"
+                className="flex items-center gap-xs text-tertiary hover:text-on-surface transition-colors font-medium"
+                title="Spectators watching"
+                aria-label={`${spectators.length} spectator${spectators.length !== 1 ? 's' : ''} watching`}
+              >
+                <span
+                  className="material-symbols-outlined text-[17px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  visibility
+                </span>
+                <span className="font-label-sm text-label-sm">
+                  {spectators.length} watching
+                </span>
+              </button>
+
+              {/* Hover tooltip listing spectator names */}
+              <div
+                className="absolute bottom-[calc(100%+10px)] left-0 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-150 pointer-events-none"
+                style={{ transformOrigin: 'bottom left' }}
+              >
+                <div className="bg-surface-container border border-outline-variant rounded-xl shadow-xl p-sm min-w-[160px] max-w-[220px]">
+                  <div className="flex items-center gap-xs mb-xs border-b border-outline-variant pb-xs">
+                    <span
+                      className="material-symbols-outlined text-[14px] text-tertiary"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
+                      visibility
+                    </span>
+                    <span className="font-label-sm text-on-surface-variant font-semibold uppercase tracking-wider" style={{ fontSize: '10px' }}>
+                      Spectators
+                    </span>
+                  </div>
+                  <ul className="flex flex-col gap-[6px]">
+                    {spectators.map((s) => (
+                      <li key={s._id} className="flex items-center gap-xs">
+                        {/* Colour dot */}
+                        <span
+                          className="w-[8px] h-[8px] rounded-full flex-shrink-0"
+                          style={{ backgroundColor: s.color || '#bec6e0' }}
+                        />
+                        <span className="font-body-sm text-on-surface truncate">{s.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {/* Arrow */}
+                <div
+                  className="w-2 h-2 bg-surface-container border-r border-b border-outline-variant ml-3 rotate-45 -mt-[5px]"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
         <div className="w-[1px] h-4 bg-outline-variant" />
         <button
           className="flex items-center gap-xs text-secondary hover:text-secondary-fixed-dim transition-colors font-medium group"

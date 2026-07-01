@@ -70,7 +70,7 @@ function registerSocketEvents(io) {
     // ── join-session ──────────────────────────────────────────────
     socket.on('join-session', async (payload, callback) => {
       try {
-        const { roomCode, playerName, hostToken } = payload || {};
+        const { roomCode, playerName, hostToken, role: requestedRole } = payload || {};
 
         if (!roomCode || !playerName) {
           return callback?.({ error: 'roomCode and playerName are required' });
@@ -86,7 +86,8 @@ function registerSocketEvents(io) {
 
         // Verify if this user is the host using the secure token
         const isHost = Boolean(hostToken && session.hostToken === hostToken);
-        const role = isHost ? 'dealer' : 'voter';
+        // Hosts are always dealers; others may join as voter or spectator
+        const role = isHost ? 'dealer' : (requestedRole === 'spectator' ? 'spectator' : 'voter');
 
         // Instead of blindly deleting, we update the existing participant if they match by name.
         // This keeps their `_id` and any placed votes intact across refreshes.
@@ -197,6 +198,12 @@ function registerSocketEvents(io) {
         const participantId = socket.data?.participantId;
         if (!participantId) {
           return callback?.({ error: 'You must join a session first' });
+        }
+
+        // Spectators cannot vote
+        const participant = await Participant.findById(participantId).select('role').lean();
+        if (participant?.role === 'spectator') {
+          return callback?.({ error: 'Spectators cannot place chips' });
         }
 
         // Upsert: one vote per participant per item per session

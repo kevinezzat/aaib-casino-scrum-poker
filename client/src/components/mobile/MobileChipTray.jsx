@@ -23,6 +23,7 @@ export default function MobileChipTray({
   onChipSelect,
   onPlaceChip,
   isActive,
+  isSpectator = false,
 }) {
   const placeLabel = chipPlaced
     ? '✓ Chip Placed!'
@@ -65,54 +66,79 @@ export default function MobileChipTray({
           )}
         </div>
 
-        {/* Chip tray */}
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <h2 className="font-label-md text-label-md text-on-surface-variant mb-md uppercase tracking-wider text-center">
-            Select your estimate
-          </h2>
-          <div id="chip-grid" className="grid grid-cols-3 gap-md justify-items-center">
-            {DECK.map((chip) => {
-              const isSelected = selectedChip === chip.value
-              return (
-                <button
-                  key={chip.value}
-                  aria-label={`Estimate ${chip.value}`}
-                  className={`estimate-chip ${isSelected ? 'selected' : ''} ${chipPlaced && !isSelected ? 'opacity-40 pointer-events-none' : ''
-                    }`}
-                  data-value={chip.value}
-                  onClick={() => onChipSelect(chip.value)}
-                >
-                  {chip.icon ? (
-                    <span className={`material-symbols-outlined text-3xl z-10 pointer-events-none ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
-                      {chip.icon}
-                    </span>
-                  ) : (
-                    <span className={`font-headline-xl text-headline-xl z-10 pointer-events-none ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
-                      {chip.label}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
+        {isSpectator ? (
+          /* Spectator view — no chips */
+          <div className="flex-1 flex flex-col items-center justify-center gap-lg py-xl text-center">
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center"
+              style={{ background: 'radial-gradient(circle, rgba(188,198,224,0.18) 0%, rgba(188,198,224,0.04) 100%)', border: '2px dashed rgba(188,198,224,0.4)' }}
+            >
+              <span
+                className="material-symbols-outlined text-[40px] text-tertiary"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                visibility
+              </span>
+            </div>
+            <div>
+              <p className="font-label-lg text-on-surface font-semibold mb-xs">You're watching</p>
+              <p className="font-body-sm text-on-surface-variant">
+                Spectators can see all votes but cannot place chips.
+              </p>
+            </div>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Chip tray */}
+            <div className="flex-1 flex flex-col items-center justify-center">
+              <h2 className="font-label-md text-label-md text-on-surface-variant mb-md uppercase tracking-wider text-center">
+                Select your estimate
+              </h2>
+              <div id="chip-grid" className="grid grid-cols-3 gap-md justify-items-center">
+                {DECK.map((chip) => {
+                  const isSelected = selectedChip === chip.value
+                  return (
+                    <button
+                      key={chip.value}
+                      aria-label={`Estimate ${chip.value}`}
+                      className={`estimate-chip ${isSelected ? 'selected' : ''} ${chipPlaced && !isSelected ? 'opacity-40 pointer-events-none' : ''
+                        }`}
+                      data-value={chip.value}
+                      onClick={() => onChipSelect(chip.value)}
+                    >
+                      {chip.icon ? (
+                        <span className={`material-symbols-outlined text-3xl z-10 pointer-events-none ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
+                          {chip.icon}
+                        </span>
+                      ) : (
+                        <span className={`font-headline-xl text-headline-xl z-10 pointer-events-none ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
+                          {chip.label}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
 
-        {/* Place chip action */}
-        <div className="mt-auto pt-sm w-full">
-          <button
-            id="btn-place-chip"
-            className={`place-chip-btn w-full text-white font-label-md text-label-md py-4 rounded-xl flex items-center justify-center gap-2 font-bold tracking-wide uppercase transition-all ${chipPlaced ? 'bg-secondary' : 'bg-[#ef4444]'
-              }`}
-            style={{ opacity: selectedChip ? 1 : 0.5 }}
-            disabled={!selectedChip}
-            onClick={onPlaceChip}
-          >
-            <span id="place-chip-label">{placeLabel}</span>
-            <span className="material-symbols-outlined text-[18px]">
-              {chipPlaced ? 'check' : 'arrow_forward'}
-            </span>
-          </button>
-        </div>
+            {/* Place chip action */}
+            <div className="mt-auto pt-sm w-full">
+              <button
+                id="btn-place-chip"
+                className={`place-chip-btn w-full text-white font-label-md text-label-md py-4 rounded-xl flex items-center justify-center gap-2 font-bold tracking-wide uppercase transition-all ${chipPlaced ? 'bg-secondary' : 'bg-[#ef4444]'
+                  }`}
+                style={{ opacity: selectedChip ? 1 : 0.5 }}
+                disabled={!selectedChip}
+                onClick={onPlaceChip}
+              >
+                <span id="place-chip-label">{placeLabel}</span>
+                <span className="material-symbols-outlined text-[18px]">
+                  {chipPlaced ? 'check' : 'arrow_forward'}
+                </span>
+              </button>
+            </div>
+          </>
+        )}
       </main>
     </div>
   )

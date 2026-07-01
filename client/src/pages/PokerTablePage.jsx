@@ -20,17 +20,18 @@ export default function PokerTablePage() {
   const location = useLocation()
   const queryParams = new URLSearchParams(location.search)
   const isBlankUrl = queryParams.get('blank') === 'true'
-  const isBlank = isBlankUrl || sessionStorage.getItem('isBlank') === 'true'
+  const isBlank = isBlankUrl || sessionStorage.getItem(`isBlank_${code}`) === 'true'
   
   useEffect(() => {
-    if (isBlankUrl) {
-      sessionStorage.setItem('isBlank', 'true')
+    if (isBlankUrl && code) {
+      sessionStorage.setItem(`isBlank_${code}`, 'true')
     }
-  }, [isBlankUrl])
-  
-  
+  }, [isBlankUrl, code])
+
+
 
   const [localPlayer, setLocalPlayer] = useState(null)
+  const [playerRole, setPlayerRole] = useState('voter')
   const [sessionId, setSessionId] = useState(null)
   const [isHost, setIsHost] = useState(false)
   const [joinError, setJoinError] = useState(null)
@@ -54,6 +55,7 @@ export default function PokerTablePage() {
     }
 
     setLocalPlayer(playerName)
+    setPlayerRole(sessionStorage.getItem('playerRole') || 'voter')
   }, [code, navigate, location.search])
 
   // Join the socket room once we have a player name and are connected
@@ -66,7 +68,7 @@ export default function PokerTablePage() {
     const hostToken = localStorage.getItem(`scrum_host_${normalizedCode}`)
 
     socket
-      .joinSession(normalizedCode, localPlayer, hostToken)
+      .joinSession(normalizedCode, localPlayer, hostToken, playerRole)
       .then((response) => {
         setSessionId(response.sessionId)
         const hostConfirmed = response.isHost === true
@@ -79,7 +81,7 @@ export default function PokerTablePage() {
         setJoinError(err.message)
         joiningRef.current = false // allow retry on error
       })
-  }, [localPlayer, socket.isConnected, sessionId, code, socket.joinSession])
+  }, [localPlayer, socket.isConnected, sessionId, code, socket.joinSession, playerRole])
 
   // ── Poker table logic (wired to socket) ─────────────────────────
   const socketHookData = {
@@ -100,6 +102,7 @@ export default function PokerTablePage() {
     chipPlaced,
     activeMobilePanel,
     players,
+    spectators,
     dealerParticipant,
     handlers,
   } = usePokerTable({ socketHook: socketHookData })
@@ -122,8 +125,8 @@ export default function PokerTablePage() {
   }, [sessionId, isBlank])
 
   // currentIssue is either the one selected via socket, or fallback to first story if host hasn't selected yet, or null if blank
-  const currentIssue = isBlank 
-    ? null 
+  const currentIssue = isBlank
+    ? null
     : socket.selectedIssue || (stories.length > 0 ? stories[0] : null)
 
   const handleSelectIssue = (storyId) => {
@@ -141,7 +144,7 @@ export default function PokerTablePage() {
       sessionStorage.removeItem('playerName')
       const normalizedCode = code.toUpperCase()
       localStorage.removeItem(`scrum_host_${normalizedCode}`)
-      
+
       if (isHost) {
         navigate('/')
       } else {
@@ -173,6 +176,8 @@ export default function PokerTablePage() {
       navigate('/thank-you')
     }
   }
+  // Is the current user a spectator?
+  const isSpectator = playerRole === 'spectator'
 
   // ── Loading / error states ──────────────────────────────────────
   if (!localPlayer) return null
@@ -239,8 +244,8 @@ export default function PokerTablePage() {
         open={confirmModal.open}
         title={confirmModal.isEnd ? "End Session" : "Leave Session"}
         message={
-          confirmModal.isEnd 
-            ? "Are you sure you want to end this session for everyone?" 
+          confirmModal.isEnd
+            ? "Are you sure you want to end this session for everyone?"
             : "Are you sure you want to leave this session?"
         }
         confirmText={confirmModal.isEnd ? "End Session" : "Leave"}
@@ -264,8 +269,10 @@ export default function PokerTablePage() {
         <PokerTable
           players={players}
           issue={currentIssue}
+          spectators={spectators}
           revealed={revealed}
           isHost={isHost}
+          isSpectator={isSpectator}
           sessionCode={code}
           dealerName={dealerName}
           onReveal={revealed ? handlers.handleNewRound : handlers.handleReveal}
@@ -289,6 +296,7 @@ export default function PokerTablePage() {
           onChipSelect={handlers.handleChipSelect}
           onPlaceChip={handlers.handlePlaceChip}
           isActive={activeMobilePanel === 'mobile-chips-panel'}
+          isSpectator={isSpectator}
         />
         <MobileTeamPanel
           players={players}
