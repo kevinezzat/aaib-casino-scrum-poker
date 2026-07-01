@@ -19,6 +19,8 @@ const DEFAULT_SCOPES = [
   'write:jira-work',
   'offline_access',
   'read:jira-user',
+  'read:board-scope:jira-software',
+  'read:sprint:jira-software',
 ].join(' ');
 
 const jiraOAuthConfig = {

@@ -5,6 +5,8 @@ const {
   createSession,
   getSessionByCode,
   updateSessionStatus,
+  addStories,
+  getStories,
 } = require('../controllers/sessionController');
 
 const router = express.Router();
@@ -17,5 +19,11 @@ router.get('/:code', getSessionByCode);
 
 // ── PATCH /api/sessions/:id/status ────────────────────────────────
 router.patch('/:id/status', updateSessionStatus);
+
+// ── POST /api/sessions/:id/stories ────────────────────────────────
+router.post('/:id/stories', addStories);
+
+// ── GET /api/sessions/:id/stories ─────────────────────────────────
+router.get('/:id/stories', getStories);
 
 module.exports = router;

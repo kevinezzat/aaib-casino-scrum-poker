@@ -185,9 +185,11 @@ const writeStoryPoints = withJiraErrorHandling(async (req, res) => {
     : Number(storyPoints);
 
   await jiraRequest(sessionId, 'PUT', `/issue/${issueKey}`, {
-    fields: {
-      [customFieldId]: fieldValue,
-    },
+    body: {
+      fields: {
+        [customFieldId]: fieldValue,
+      },
+    }
   });
 
   // Jira's PUT /issue returns 204 with no body on success
@@ -231,7 +233,9 @@ const postComment = withJiraErrorHandling(async (req, res) => {
   const adfComment = buildAdfComment(comment.trim());
 
   const data = await jiraRequest(sessionId, 'POST', `/issue/${issueKey}/comment`, {
-    body: adfComment,
+    body: {
+      body: adfComment,
+    }
   });
 
   return res.status(201).json({
@@ -312,4 +316,82 @@ function buildAdfComment(text) {
   };
 }
 
-module.exports = { getBacklog, getIssueDetail, writeStoryPoints, postComment };
+// (End of original file)
+// ── 5. Project, Board, and Sprint Fetching ────────────────────────────────────
+
+/**
+ * GET /api/jira/projects?roomCode=XXXXXX
+ * Fetches all projects the user has access to.
+ */
+const getProjects = withJiraErrorHandling(async (req, res) => {
+  const { roomCode } = req.query;
+  const sessionId = await resolveSessionId(roomCode);
+  if (!sessionId) {
+    return res.status(404).json({ error: `No session found for room code: ${roomCode}` });
+  }
+
+  const data = await jiraRequest(sessionId, 'GET', '/project');
+  
+  const projects = data.map(p => ({
+    id: p.id,
+    key: p.key,
+    name: p.name,
+    avatarUrls: p.avatarUrls,
+  }));
+
+  return res.json(projects);
+});
+
+/**
+ * GET /api/jira/boards?roomCode=XXXXXX&projectKeyOrId=...
+ * Fetches agile boards, optionally filtered by project.
+ */
+const getBoards = withJiraErrorHandling(async (req, res) => {
+  const { roomCode, projectKeyOrId } = req.query;
+  const sessionId = await resolveSessionId(roomCode);
+  if (!sessionId) {
+    return res.status(404).json({ error: `No session found for room code: ${roomCode}` });
+  }
+
+  let path = '/board?type=scrum'; // Default to scrum boards
+  if (projectKeyOrId) {
+    path += `&projectKeyOrId=${encodeURIComponent(projectKeyOrId)}`;
+  }
+
+  const data = await jiraRequest(sessionId, 'GET', path, { apiPrefix: '/rest/agile/1.0' });
+  
+  const boards = (data.values || []).map(b => ({
+    id: b.id,
+    name: b.name,
+    type: b.type,
+  }));
+
+  return res.json(boards);
+});
+
+/**
+ * GET /api/jira/boards/:boardId/sprints?roomCode=XXXXXX
+ * Fetches active and future sprints for a given board.
+ */
+const getSprints = withJiraErrorHandling(async (req, res) => {
+  const { boardId } = req.params;
+  const { roomCode } = req.query;
+  const sessionId = await resolveSessionId(roomCode);
+  if (!sessionId) {
+    return res.status(404).json({ error: `No session found for room code: ${roomCode}` });
+  }
+
+  const data = await jiraRequest(sessionId, 'GET', `/board/${boardId}/sprint?state=active,future`, { apiPrefix: '/rest/agile/1.0' });
+  
+  const sprints = (data.values || []).map(s => ({
+    id: s.id,
+    name: s.name,
+    state: s.state,
+    startDate: s.startDate,
+    endDate: s.endDate,
+  }));
+
+  return res.json(sprints);
+});
+
+module.exports = { getBacklog, getIssueDetail, writeStoryPoints, postComment, getProjects, getBoards, getSprints };

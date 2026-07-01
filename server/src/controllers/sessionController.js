@@ -2,6 +2,7 @@
 
 const { customAlphabet } = require('nanoid');
 const Session = require('../models/Session');
+const Story = require('../models/Story');
 
 // 6-char uppercase alphanumeric room code, e.g. "AB12CD"
 const generateRoomCode = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 6);
@@ -138,8 +139,68 @@ async function updateSessionStatus(req, res) {
   }
 }
 
+// ── POST /api/sessions/:id/stories ────────────────────────────────
+/**
+ * Import stories into a session.
+ * Body: { stories: [{ externalId, summary, description, status, type, storyPoints }] }
+ * Returns: created stories
+ */
+async function addStories(req, res) {
+  try {
+    const { id } = req.params;
+    const { stories } = req.body;
+
+    if (!Array.isArray(stories) || stories.length === 0) {
+      return res.status(400).json({ error: 'stories array is required' });
+    }
+
+    const session = await Session.findById(id);
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Get current max order
+    const lastStory = await Story.findOne({ sessionId: id }).sort({ order: -1 });
+    let startOrder = lastStory ? lastStory.order + 1 : 0;
+
+    const docs = stories.map((s, i) => ({
+      ...s,
+      sessionId: id,
+      order: startOrder + i,
+    }));
+
+    const inserted = await Story.insertMany(docs);
+    
+    if (req.io) {
+      req.io.to(session.roomCode).emit('session:storiesAdded', inserted);
+    }
+
+    return res.status(201).json(inserted);
+  } catch (err) {
+    console.error('[POST /api/sessions/:id/stories]', err);
+    return res.status(500).json({ error: 'Failed to import stories' });
+  }
+}
+
+// ── GET /api/sessions/:id/stories ─────────────────────────────────
+/**
+ * Get all stories for a session.
+ */
+async function getStories(req, res) {
+  try {
+    const { id } = req.params;
+    const stories = await Story.find({ sessionId: id }).sort({ order: 1 });
+    return res.json(stories);
+  } catch (err) {
+    console.error('[GET /api/sessions/:id/stories]', err);
+    return res.status(500).json({ error: 'Failed to fetch stories' });
+  }
+}
+
 module.exports = {
   createSession,
   getSessionByCode,
   updateSessionStatus,
+  addStories,
+  getStories,
 };

@@ -277,6 +277,15 @@ async function callback(req, res) {
   }
 
   // ── 6. Success — redirect to frontend ─────────────────────────
+  try {
+    const session = await Session.findById(sessionId).lean();
+    if (session) {
+      return res.redirect(`${frontendBase}/create/${session.roomCode}?jiraConnected=true`);
+    }
+  } catch (err) {
+    console.error('[jiraAuth/callback] Failed to find session for redirect:', err);
+  }
+  
   return res.redirect(`${frontendBase}?jiraConnected=true`);
 }
 

@@ -60,18 +60,17 @@ async function exchangeRefreshToken(refreshToken) {
 // ── Main export ───────────────────────────────────────────────────────────────
 
 /**
- * Make an authenticated request to the Jira Cloud REST API v3.
+ * Make an authenticated request to the Jira Cloud REST API.
  *
  * @param {string} sessionId — MongoDB Session._id (string or ObjectId)
  * @param {string} method    — HTTP verb (GET, POST, PUT, DELETE, …)
  * @param {string} path      — Jira API path, e.g. '/issue/PROJ-1' (must start with '/')
- * @param {object} [body]    — Optional request body (will be JSON-serialised)
+ * @param {object} [options] — Options including body, and apiPrefix
  * @returns {Promise<any>}   — Parsed JSON response from Jira
- *
- * @throws {JiraReauthRequiredError} if token cannot be refreshed (user must reconnect)
- * @throws {Error}                   for other API/network failures
  */
-async function jiraRequest(sessionId, method, path, body) {
+async function jiraRequest(sessionId, method, path, options = {}) {
+  const { body, apiPrefix = '/rest/api/3' } = options;
+
   // ── 1. Load token record ─────────────────────────────────────────
   // findOne returns the most-recently-created record for this session.
   // Mongoose getters automatically decrypt accessToken / refreshToken.
@@ -128,7 +127,7 @@ async function jiraRequest(sessionId, method, path, body) {
 
   // ── 3. Make the Jira API call ────────────────────────────────────
   // accessToken is the decrypted plaintext value (via Mongoose getter)
-  const url = `${JIRA_API_BASE}/${tokenRecord.cloudId}/rest/api/3${path}`;
+  const url = `${JIRA_API_BASE}/${tokenRecord.cloudId}${apiPrefix}${path}`;
 
   const headers = {
     Authorization: `Bearer ${tokenRecord.accessToken}`,
@@ -150,6 +149,9 @@ async function jiraRequest(sessionId, method, path, body) {
       responseData.errorMessages?.[0] ||
       responseData.message ||
       `Jira API error ${apiRes.status}`;
+    
+    console.error('[JIRA API ERROR]', url, apiRes.status, JSON.stringify(responseData));
+    
     const err = new Error(message);
     err.statusCode = apiRes.status;
     err.jiraResponse = responseData;
