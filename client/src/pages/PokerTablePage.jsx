@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useSocket } from '../hooks/useSocket'
 import { usePokerTable } from '../hooks/usePokerTable'
 import TopNavBar from '../components/TopNavBar'
@@ -10,18 +10,25 @@ import MobileNavBar from '../components/mobile/MobileNavBar'
 import { MobileTablePanel, MobileStatusPanel, MobileTeamPanel } from '../components/mobile/MobilePanels'
 import QrPopover from '../components/QrPopover'
 import WelcomeQrModal from '../components/WelcomeQrModal'
+import ConfirmModal from '../components/ConfirmModal'
 
-// ── Stub issue data (no issue CRUD yet in Phase 1) ────────────────
-const STUB_ISSUE = {
-  key: 'AUTH-204',
-  title: 'Add OAuth login flow',
-  description:
-    "As a user, I want to be able to log in using my Google or Microsoft account so that I don't have to remember another password.",
-}
+// We will fetch stories and use the socket's selectedIssue.
 
 export default function PokerTablePage() {
   const { code } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const queryParams = new URLSearchParams(location.search)
+  const isBlankUrl = queryParams.get('blank') === 'true'
+  const isBlank = isBlankUrl || sessionStorage.getItem('isBlank') === 'true'
+  
+  useEffect(() => {
+    if (isBlankUrl) {
+      sessionStorage.setItem('isBlank', 'true')
+    }
+  }, [isBlankUrl])
+  
+  
 
   const [localPlayer, setLocalPlayer] = useState(null)
   const [sessionId, setSessionId] = useState(null)
@@ -29,6 +36,9 @@ export default function PokerTablePage() {
   const [joinError, setJoinError] = useState(null)
   const [showQr, setShowQr] = useState(false)
   const [showWelcomeQr, setShowWelcomeQr] = useState(false)
+  const [stories, setStories] = useState([])
+  const [confirmModal, setConfirmModal] = useState({ open: false, isEnd: false })
+  const [toast, setToast] = useState(null)
   const joiningRef = useRef(false)
 
   // ── Socket connection ───────────────────────────────────────────
@@ -39,12 +49,12 @@ export default function PokerTablePage() {
     const playerName = sessionStorage.getItem('playerName')
 
     if (!playerName) {
-      navigate(`/join/${code}`)
+      navigate(`/join/${code}${location.search}`)
       return
     }
 
     setLocalPlayer(playerName)
-  }, [code, navigate])
+  }, [code, navigate, location.search])
 
   // Join the socket room once we have a player name and are connected
   useEffect(() => {
@@ -94,9 +104,75 @@ export default function PokerTablePage() {
     handlers,
   } = usePokerTable({ socketHook: socketHookData })
 
+  // ── Fetch stories for this session ──────────────────────────────
+  useEffect(() => {
+    if (!sessionId || isBlank) return
+    const fetchSessionStories = async () => {
+      try {
+        const res = await fetch(`/api/sessions/${sessionId}/stories`)
+        if (res.ok) {
+          const data = await res.json()
+          setStories(data)
+        }
+      } catch (err) {
+        console.error('Failed to fetch stories', err)
+      }
+    }
+    fetchSessionStories()
+  }, [sessionId, isBlank])
+
+  // currentIssue is either the one selected via socket, or fallback to first story if host hasn't selected yet, or null if blank
+  const currentIssue = isBlank 
+    ? null 
+    : socket.selectedIssue || (stories.length > 0 ? stories[0] : null)
+
+  const handleSelectIssue = (storyId) => {
+    socket.selectIssue(sessionId, storyId).catch(err => console.error(err))
+  }
+
   // Dealer name: prefer the live socket participant, fall back to local player name
   // so the host sees their name immediately before the round-trip completes.
   const dealerName = dealerParticipant?.name ?? (isHost ? localPlayer : null)
+
+  // ── Session Ended Effect ────────────────────────────────────────
+  useEffect(() => {
+    if (socket.sessionEnded) {
+      // Clear host token and player data if needed, then navigate
+      sessionStorage.removeItem('playerName')
+      const normalizedCode = code.toUpperCase()
+      localStorage.removeItem(`scrum_host_${normalizedCode}`)
+      
+      if (isHost) {
+        navigate('/')
+      } else {
+        navigate('/thank-you')
+      }
+    }
+  }, [socket.sessionEnded, navigate, code, isHost])
+
+  // ── Participant Left Toast ───────────────────────────────────────
+  useEffect(() => {
+    if (socket.participantLeft) {
+      setToast(`${socket.participantLeft.name} has left the session.`)
+      const timer = setTimeout(() => setToast(null), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [socket.participantLeft])
+
+  const handleLeaveAction = () => {
+    setConfirmModal({ open: true, isEnd: isHost })
+  }
+
+  const handleConfirmAction = () => {
+    setConfirmModal({ open: false, isEnd: false })
+    if (confirmModal.isEnd) {
+      socket.endSession(sessionId).then(() => {
+        navigate('/')
+      }).catch(err => console.error(err))
+    } else {
+      navigate('/thank-you')
+    }
+  }
 
   // ── Loading / error states ──────────────────────────────────────
   if (!localPlayer) return null
@@ -134,9 +210,11 @@ export default function PokerTablePage() {
     <div className="bg-surface-container-lowest text-on-surface h-screen overflow-hidden flex flex-col font-sans">
       {/* Fixed top nav */}
       <TopNavBar
-        issueKey={STUB_ISSUE.key}
+        issueKey={currentIssue?.externalId || currentIssue?.key}
         timerSeconds={timerSeconds}
         onQrClick={() => setShowQr((v) => !v)}
+        isHost={isHost}
+        onLeaveAction={handleLeaveAction}
       />
 
       {/* QR popover (nav button) */}
@@ -144,6 +222,7 @@ export default function PokerTablePage() {
         open={showQr}
         sessionCode={code}
         onClose={() => setShowQr(false)}
+        isBlank={isBlank}
       />
 
       {/* Welcome modal — host only, auto-opens on first join */}
@@ -152,7 +231,31 @@ export default function PokerTablePage() {
         sessionCode={code}
         hostName={localPlayer}
         onClose={() => setShowWelcomeQr(false)}
+        isBlank={isBlank}
       />
+
+      {/* Confirm Modal for End/Leave */}
+      <ConfirmModal
+        open={confirmModal.open}
+        title={confirmModal.isEnd ? "End Session" : "Leave Session"}
+        message={
+          confirmModal.isEnd 
+            ? "Are you sure you want to end this session for everyone?" 
+            : "Are you sure you want to leave this session?"
+        }
+        confirmText={confirmModal.isEnd ? "End Session" : "Leave"}
+        isDestructive={true}
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmModal({ open: false, isEnd: false })}
+      />
+
+      {/* Simple Toast for Participant Left */}
+      {toast && (
+        <div className="fixed top-[64px] right-4 z-50 animate-fade-in bg-surface-container-high text-on-surface px-md py-sm rounded-xl shadow-lg border border-outline-variant flex items-center gap-xs">
+          <span className="material-symbols-outlined text-secondary text-[20px]">info</span>
+          <span className="font-body-sm">{toast}</span>
+        </div>
+      )}
 
       {/* Main content — below 48px nav */}
       <div className="flex flex-1 mt-[48px] relative w-full h-[calc(100vh-48px)]">
@@ -160,7 +263,7 @@ export default function PokerTablePage() {
         {/* Desktop poker table */}
         <PokerTable
           players={players}
-          issue={STUB_ISSUE}
+          issue={currentIssue}
           revealed={revealed}
           isHost={isHost}
           sessionCode={code}
@@ -170,19 +273,17 @@ export default function PokerTablePage() {
 
         {/* Mobile panels */}
         <MobileTablePanel
-          issue={STUB_ISSUE}
+          issue={currentIssue}
           players={players}
           isActive={activeMobilePanel === 'mobile-table-panel'}
         />
         <MobileStatusPanel
-          issue={STUB_ISSUE}
+          issue={currentIssue}
           players={players}
           isActive={activeMobilePanel === 'mobile-status-panel'}
         />
         <MobileChipTray
-          issueKey={STUB_ISSUE.key}
-          issueTitle={STUB_ISSUE.title}
-          issueDescription={STUB_ISSUE.description}
+          issue={currentIssue}
           selectedChip={selectedChip}
           chipPlaced={chipPlaced}
           onChipSelect={handlers.handleChipSelect}
@@ -195,12 +296,16 @@ export default function PokerTablePage() {
         />
 
         {/* Desktop right sidebar */}
-        <IssueSidebar
-          issueKey={STUB_ISSUE.key}
-          issueTitle={STUB_ISSUE.title}
-          activeTab={activeSidebarTab}
-          onTabChange={handlers.handleSidebarTab}
-        />
+        {!isBlank && (
+          <IssueSidebar
+            issue={currentIssue}
+            activeTab={activeSidebarTab}
+            onTabChange={handlers.handleSidebarTab}
+            isHost={isHost}
+            stories={stories}
+            onSelectIssue={handleSelectIssue}
+          />
+        )}
       </div>
 
       {/* Mobile bottom nav */}

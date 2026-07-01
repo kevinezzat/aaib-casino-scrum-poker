@@ -60,8 +60,8 @@ export default function PokerTable({ players, issue, revealed, onReveal, isHost,
 
             {/* Center pot */}
             <CenterPot
-              issueKey={issue.key}
-              issueTitle={issue.title}
+              issueKey={issue?.externalId || issue?.key}
+              issueTitle={issue?.summary || issue?.title}
               revealed={revealed}
               onReveal={onReveal}
               isHost={isHost}

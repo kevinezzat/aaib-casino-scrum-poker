@@ -26,6 +26,10 @@ const storySchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    acceptanceCriteria: {
+      type: String,
+      default: '',
+    },
     status: {
       type: String,
       default: 'Unknown',

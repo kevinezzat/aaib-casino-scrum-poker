@@ -79,7 +79,12 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
     fetchSprints();
   }, [selectedBoard, roomCode]);
 
-  const handleFetchIssues = async () => {
+  const handleFetchIssues = async (nextPageToken = null) => {
+    // Guard against React SyntheticEvent being passed from onClick
+    if (typeof nextPageToken !== 'string') {
+      nextPageToken = null;
+    }
+    
     setFetchingIssues(true);
     setError(null);
     try {
@@ -90,11 +95,20 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
         jql = `project = "${selectedProject}" AND resolution = Unresolved ORDER BY created DESC`;
       }
 
-      const res = await fetchApi(`/api/jira/issues?roomCode=${roomCode}&jql=${encodeURIComponent(jql)}`);
+      let url = `/api/jira/issues?roomCode=${roomCode}&jql=${encodeURIComponent(jql)}`;
+      if (nextPageToken) {
+        url += `&nextPageToken=${encodeURIComponent(nextPageToken)}`;
+      }
+
+      const res = await fetchApi(url);
       if (!res.ok) throw new Error('Failed to fetch issues');
       
       const data = await res.json();
-      onIssuesFetched(data.issues || []);
+      // Pass pagination info in case the parent component needs it
+      onIssuesFetched(data.issues || [], {
+        nextPageToken: data.nextPageToken,
+        approximateTotal: data.approximateTotal
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -200,7 +214,7 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
       {selectedSprint && (
         <div className="mt-4 flex justify-end animate-fade-in border-t border-outline-variant pt-4">
           <button
-            onClick={handleFetchIssues}
+            onClick={() => handleFetchIssues()}
             disabled={fetchingIssues}
             className="bg-primary hover:bg-surface-tint text-on-primary font-label-md py-3 px-8 rounded-lg uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-xs shadow-md"
           >

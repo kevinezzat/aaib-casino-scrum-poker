@@ -8,18 +8,20 @@ export default function CenterPot({ issueKey, issueTitle, revealed, onReveal, is
   return (
     <div className="flex flex-col items-center gap-sm z-10">
       {/* Issue card */}
-      <div
-        id="issue-card"
-        className="bg-surface-container-high/95 border border-outline-variant rounded-lg p-sm min-w-[220px] text-center animate-scale-in backdrop-blur-sm"
-        style={{ animationDelay: '0.4s' }}
-      >
-        <span className="font-body-sm text-body-sm text-on-surface block mb-xs font-bold">
-          {issueKey}
-        </span>
-        <span className="font-label-sm text-label-sm text-secondary block font-semibold uppercase tracking-wide">
-          {issueTitle}
-        </span>
-      </div>
+      {issueKey && (
+        <div
+          id="issue-card"
+          className="bg-surface-container-high/95 border border-outline-variant rounded-lg p-sm min-w-[220px] text-center animate-scale-in backdrop-blur-sm"
+          style={{ animationDelay: '0.4s' }}
+        >
+          <span className="font-body-sm text-body-sm text-on-surface block mb-xs font-bold">
+            {issueKey}
+          </span>
+          <span className="font-label-sm text-label-sm text-secondary block font-semibold uppercase tracking-wide">
+            {issueTitle}
+          </span>
+        </div>
+      )}
 
       {/* Enhanced 3D chip stack */}
       <div

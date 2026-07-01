@@ -44,11 +44,22 @@ export function usePokerTable({ socketHook } = {}) {
   const [timerSeconds, setTimerSeconds] = useState(INITIAL_TIMER)
 
   useEffect(() => {
-    const id = setInterval(() => {
-      setTimerSeconds((s) => (s > 0 ? s - 1 : 0))
-    }, 1000)
-    return () => clearInterval(id)
-  }, [])
+    let id;
+    if (socketHook?.roundStatus !== 'revealed') {
+      id = setInterval(() => {
+        setTimerSeconds((s) => (s > 0 ? s - 1 : 0))
+      }, 1000)
+    }
+    return () => {
+      if (id) clearInterval(id)
+    }
+  }, [socketHook?.roundStatus])
+
+  useEffect(() => {
+    if (socketHook?.roundStatus === 'voting') {
+      setTimerSeconds(INITIAL_TIMER)
+    }
+  }, [socketHook?.roundStatus])
 
   // ── Revealed state (driven by socket or local toggle) ─────────────
   const revealed = socketHook?.roundStatus === 'revealed'

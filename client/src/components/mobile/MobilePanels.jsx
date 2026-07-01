@@ -8,17 +8,34 @@ export function MobileTablePanel({ issue, players, isActive }) {
       className={`mobile-panel ${isActive ? 'flex' : 'hidden'} md:hidden flex-1 flex-col bg-background overflow-y-auto pb-[88px]`}
     >
       <div className="px-margin-mobile pt-md flex flex-col gap-md flex-1">
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
-          <div className="flex justify-between items-center mb-sm">
-            <span className="font-label-md text-label-md text-secondary">{issue.key}</span>
-            <div className="flex items-center gap-xs">
-              <span className="w-2 h-2 rounded-full bg-secondary" />
-              <span className="font-label-sm text-label-sm text-on-surface-variant">Voting Open</span>
+        {issue && (
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+            <div className="flex justify-between items-center mb-sm">
+              <span className="font-label-md text-label-md text-secondary">{issue.externalId || issue.key}</span>
+              <div className="flex items-center gap-xs">
+                <span className="w-2 h-2 rounded-full bg-secondary" />
+                <span className="font-label-sm text-label-sm text-on-surface-variant">Voting Open</span>
+              </div>
             </div>
+            <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">{issue.summary || issue.title}</h1>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">{issue.description || 'No description'}</p>
+            {issue.acceptanceCriteria && (
+              <>
+                <h3 className="font-body-sm text-body-sm font-bold text-secondary mb-xs mt-md uppercase tracking-wider">
+                  Acceptance Criteria
+                </h3>
+                <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                  {issue.acceptanceCriteria.split('\n').map((line, i) => (
+                    <span key={i}>
+                      {line}
+                      <br />
+                    </span>
+                  ))}
+                </p>
+              </>
+            )}
           </div>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">{issue.title}</h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant">{issue.description}</p>
-        </div>
+        )}
 
         <div className="flex flex-col gap-sm">
           <h2 className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
@@ -77,13 +94,15 @@ export function MobileStatusPanel({ issue, players, isActive }) {
             All team members have submitted their estimates. Waiting for Scrum Master to reveal.
           </p>
         </div>
-        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
-          <h3 className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-sm">
-            Current Issue
-          </h3>
-          <span className="font-body-sm text-body-sm text-secondary font-semibold">{issue.key}</span>
-          <p className="font-body-sm text-body-sm text-on-surface mt-xs">{issue.title}</p>
-        </div>
+        {issue && (
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md">
+            <h3 className="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider mb-sm">
+              Current Issue
+            </h3>
+            <span className="font-body-sm text-body-sm text-secondary font-semibold">{issue.externalId || issue.key}</span>
+            <p className="font-body-sm text-body-sm text-on-surface mt-xs">{issue.summary || issue.title}</p>
+          </div>
+        )}
       </div>
     </div>
   )

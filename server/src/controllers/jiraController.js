@@ -77,7 +77,7 @@ function withJiraErrorHandling(fn) {
  * @decision Write-back identity: N/A for reads — uses host's read:jira-work token.
  */
 const getBacklog = withJiraErrorHandling(async (req, res) => {
-  const { roomCode, jql, maxResults = 50, startAt = 0 } = req.query;
+  const { roomCode, jql, maxResults = 50, nextPageToken } = req.query;
 
   if (!roomCode) {
     return res.status(400).json({ error: 'roomCode query parameter is required' });
@@ -91,17 +91,34 @@ const getBacklog = withJiraErrorHandling(async (req, res) => {
   // Default JQL: all unresolved issues, ordered as they appear in the board
   const effectiveJql = jql || 'resolution = Unresolved ORDER BY created DESC';
 
-  const data = await jiraRequest(sessionId, 'GET',
-    `/search?jql=${encodeURIComponent(effectiveJql)}&maxResults=${maxResults}&startAt=${startAt}&fields=summary,description,story_points,status,issuetype,customfield_10016,customfield_10028`
-  );
+  const reqBody = {
+    jql: effectiveJql,
+    maxResults: Number(maxResults),
+    fields: ['summary', 'description', 'status', 'issuetype', 'customfield_10016', 'customfield_10028', 'priority', 'assignee', 'key']
+  };
+
+  if (nextPageToken) {
+    reqBody.nextPageToken = nextPageToken;
+  }
+
+  const data = await jiraRequest(sessionId, 'POST', '/search/jql', {
+    body: reqBody
+  });
+
+  // Fetch approximate count
+  const countData = await jiraRequest(sessionId, 'POST', '/search/approximate-count', {
+    body: {
+      jql: effectiveJql
+    }
+  }).catch(() => ({ count: 0 }));
 
   // Shape the response — normalise the two common story-point custom fields
   const issues = (data.issues || []).map(shapeIssue);
 
   return res.json({
     issues,
-    total: data.total ?? 0,
-    startAt: data.startAt ?? 0,
+    nextPageToken: data.nextPageToken ?? null,
+    approximateTotal: countData.count ?? 0,
     maxResults: data.maxResults ?? issues.length,
   });
 });

@@ -4,6 +4,7 @@ import JoinSessionPage from './pages/JoinSessionPage'
 import PokerTablePage from './pages/PokerTablePage'
 import TokenTest from './components/TokenTest'
 import GlobalJiraHandler from './components/GlobalJiraHandler'
+import ThankYouPage from './pages/ThankYouPage'
 
 export default function App() {
   return (
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/create/:code" element={<CreateSessionPage />} />
         <Route path="/join/:code" element={<JoinSessionPage />} />
         <Route path="/session/:code" element={<PokerTablePage />} />
+        <Route path="/thank-you" element={<ThankYouPage />} />
         <Route path="/test-tokens" element={<TokenTest />} />
       </Routes>
     </BrowserRouter>

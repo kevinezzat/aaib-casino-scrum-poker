@@ -4,7 +4,7 @@ import React from 'react'
  * TopNavBar — fixed top bar across desktop and mobile.
  * HTML ref: lines 523–558 of design-reference/index.html
  */
-export default function TopNavBar({ issueKey, timerSeconds, onTimerClick, onQrClick }) {
+export default function TopNavBar({ issueKey, timerSeconds, onTimerClick, onQrClick, isHost, onLeaveAction }) {
   const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0')
   const secs = (timerSeconds % 60).toString().padStart(2, '0')
   const timerWarning = timerSeconds <= 30
@@ -58,10 +58,14 @@ export default function TopNavBar({ issueKey, timerSeconds, onTimerClick, onQrCl
 
         {/* Issue + Timer Pill */}
         <div className="flex items-center gap-xs bg-surface-container-high px-xs md:px-sm py-xs rounded-full border border-outline-variant md:order-1">
-          <span className="font-body-sm text-body-sm text-on-surface font-semibold text-[12px] md:text-[14px]">
-            {issueKey}
-          </span>
-          <span className="w-[1px] h-4 bg-outline-variant" />
+          {issueKey && (
+            <>
+              <span className="font-body-sm text-body-sm text-on-surface font-semibold text-[12px] md:text-[14px]">
+                {issueKey}
+              </span>
+              <span className="w-[1px] h-4 bg-outline-variant" />
+            </>
+          )}
           <span
             id="session-timer"
             className={`font-body-sm text-body-sm font-semibold timer-text text-[12px] md:text-[14px] ${
@@ -98,6 +102,22 @@ export default function TopNavBar({ issueKey, timerSeconds, onTimerClick, onQrCl
               style={{ fontVariationSettings: "'FILL' 1" }}
             >
               qr_code_2
+            </span>
+          </button>
+          <button
+            id="btn-leave"
+            className="text-error hover:bg-error/10 transition-all px-sm py-xs rounded-lg flex items-center gap-xs ml-xs"
+            title={isHost ? "End Session" : "Leave Session"}
+            onClick={onLeaveAction}
+          >
+            <span
+              className="material-symbols-outlined text-[20px]"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              {isHost ? "power_settings_new" : "logout"}
+            </span>
+            <span className="hidden md:inline font-label-md font-semibold">
+              {isHost ? "End" : "Leave"}
             </span>
           </button>
         </div>

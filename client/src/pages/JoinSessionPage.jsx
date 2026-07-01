@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 
 export default function JoinSessionPage() {
   const { code } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  const queryParams = new URLSearchParams(location.search)
+  const isBlankUrl = queryParams.get('blank') === 'true'
+  
+  useEffect(() => {
+    if (isBlankUrl) {
+      sessionStorage.setItem('isBlank', 'true')
+    }
+  }, [isBlankUrl])
   
   const [session, setSession] = useState(null)
   const [loadingSession, setLoadingSession] = useState(true)
@@ -45,8 +54,11 @@ export default function JoinSessionPage() {
     sessionStorage.setItem('playerName', voterName.trim())
     sessionStorage.removeItem('isHost') // Ensure they aren't marked as host from a previous session
     
+    const isBlankStored = sessionStorage.getItem('isBlank') === 'true'
+    const blankParam = (isBlankUrl || isBlankStored) ? '?blank=true' : ''
+    
     // Navigate to the table
-    navigate(`/session/${session.roomCode}`)
+    navigate(`/session/${session.roomCode}${blankParam}`)
   }
 
   if (loadingSession) {

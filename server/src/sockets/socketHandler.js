@@ -344,6 +344,77 @@ function registerSocketEvents(io) {
       }
     });
 
+    // ── select-issue ──────────────────────────────────────────────
+    socket.on('select-issue', async (payload, callback) => {
+      try {
+        const { sessionId, storyId } = payload || {};
+        if (!sessionId || !storyId) {
+          return callback?.({ error: 'sessionId and storyId are required' });
+        }
+        
+        const session = await Session.findById(sessionId);
+        if (!session) return callback?.({ error: 'Session not found' });
+        
+        const participantId = socket.data?.participantId;
+        if (!participantId || session.hostId !== participantId.toString()) {
+          return callback?.({ error: 'Only the host can select an issue' });
+        }
+        
+        const Story = require('../models/Story');
+        const story = await Story.findById(storyId);
+        
+        const roomCode = socket.data?.roomCode;
+        if (roomCode && story) {
+          io.to(roomCode).emit('issue-selected', { story });
+        }
+        
+        callback?.({ success: true });
+      } catch (err) {
+        console.error('[socket] select-issue error:', err.message);
+        callback?.({ error: 'Failed to select issue' });
+      }
+    });
+
+    // ── end-session ───────────────────────────────────────────────
+    socket.on('end-session', async (payload, callback) => {
+      try {
+        const { sessionId } = payload || {};
+
+        if (!sessionId) {
+          return callback?.({ error: 'sessionId is required' });
+        }
+
+        const session = await Session.findById(sessionId);
+        if (!session) {
+          return callback?.({ error: 'Session not found' });
+        }
+
+        // Host-only guard
+        const participantId = socket.data?.participantId;
+        if (!participantId || session.hostId !== participantId.toString()) {
+          return callback?.({ error: 'Only the host can end the session' });
+        }
+
+        // Broadcast to room that session has ended
+        const roomCode = socket.data?.roomCode;
+        if (roomCode) {
+          io.to(roomCode).emit('session-ended', { message: 'The host has ended the session.' });
+        }
+
+        // Delete session and related data
+        await Session.findByIdAndDelete(sessionId);
+        await Participant.deleteMany({ sessionId });
+        await Vote.deleteMany({ sessionId });
+
+        callback?.({ success: true });
+
+        console.log(`[socket] session ${sessionId} ended by host`);
+      } catch (err) {
+        console.error('[socket] end-session error:', err.message);
+        callback?.({ error: 'Failed to end session' });
+      }
+    });
+
     // ── disconnect ────────────────────────────────────────────────
     socket.on('disconnect', async () => {
       try {
@@ -352,6 +423,14 @@ function registerSocketEvents(io) {
         if (!participantId) {
           console.log(`[socket] disconnected (no session): ${socket.id}`);
           return;
+        }
+
+        // Emit participant-left event to notify others
+        if (roomCode) {
+          const participant = await Participant.findById(participantId).select('name').lean();
+          if (participant) {
+            io.to(roomCode).emit('participant-left', { name: participant.name });
+          }
         }
 
         // Remove participant from DB

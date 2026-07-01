@@ -17,9 +17,7 @@ const DECK = [
  * HTML ref: lines 742–796.
  */
 export default function MobileChipTray({
-  issueKey,
-  issueTitle,
-  issueDescription,
+  issue,
   selectedChip,
   chipPlaced,
   onChipSelect,
@@ -46,11 +44,25 @@ export default function MobileChipTray({
           className="bg-surface-container-lowest border border-outline-variant rounded-xl p-md animate-fade-in"
         >
           <div className="flex justify-between items-start mb-sm">
-            <span className="font-label-md text-label-md text-secondary font-semibold">{issueKey}</span>
+            <span className="font-label-md text-label-md text-secondary font-semibold">
+              {issue?.externalId || issue?.key || ''}
+            </span>
             <span className="font-label-sm text-label-sm text-on-surface-variant">Voting Open</span>
           </div>
-          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">{issueTitle}</h1>
-          <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">{issueDescription}</p>
+          <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2">
+            {issue?.summary || issue?.title || 'No active issue'}
+          </h1>
+          <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-2">
+            {issue?.description || ''}
+          </p>
+          {issue?.acceptanceCriteria && (
+            <div className="mt-xs">
+              <span className="font-label-sm font-bold text-secondary uppercase text-[10px] tracking-wider block mb-1">Acceptance Criteria</span>
+              <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-3">
+                {issue.acceptanceCriteria}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Chip tray */}

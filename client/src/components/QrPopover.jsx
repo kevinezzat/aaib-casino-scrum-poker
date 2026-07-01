@@ -9,7 +9,7 @@ import { QRCodeSVG } from 'qrcode.react'
  * @param {string}   sessionCode   — room code used to build the join URL
  * @param {Function} onClose       — called when user dismisses the popover
  */
-export default function QrPopover({ open, sessionCode, onClose }) {
+export default function QrPopover({ open, sessionCode, onClose, isBlank }) {
   const cardRef = useRef(null)
 
   // Close on outside click
@@ -36,7 +36,7 @@ export default function QrPopover({ open, sessionCode, onClose }) {
 
   if (!open || !sessionCode) return null
 
-  const joinUrl = `${window.location.origin}/join/${sessionCode}`
+  const joinUrl = `${window.location.origin}/join/${sessionCode}${isBlank ? '?blank=true' : ''}`
 
   return (
     /* Transparent full-screen layer so outside clicks are detected */

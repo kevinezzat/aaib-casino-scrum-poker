@@ -4,7 +4,10 @@ import { fetchApi } from '../utils/api'
 import JiraConnectButton from '../components/JiraConnectButton'
 import JiraStorySelector from '../components/JiraStorySelector'
 import JiraIssueList from '../components/JiraIssueList'
+import CsvMappingUI from '../components/CsvMappingUI'
 import { useJiraConnection } from '../hooks/useJiraConnection'
+import Papa from 'papaparse'
+import * as XLSX from 'xlsx'
 
 export default function CreateSessionPage() {
   const navigate = useNavigate()
@@ -21,11 +24,13 @@ export default function CreateSessionPage() {
 
   const [fetchedIssues, setFetchedIssues] = useState(null)
   const [importing, setImporting] = useState(false)
+  const [csvData, setCsvData] = useState(null)
 
   let currentStep = 1
   if (urlCode) currentStep = 2
   if (urlCode && connected) currentStep = 3
   if (urlCode && connected && fetchedIssues) currentStep = 4
+  if (urlCode && csvData) currentStep = 5
 
   // Load hostName from session storage if they navigate back
   useEffect(() => {
@@ -73,7 +78,7 @@ export default function CreateSessionPage() {
 
   const handleStartBlankSession = () => {
     if (urlCode) {
-      navigate(`/session/${urlCode}`)
+      navigate(`/session/${urlCode}?blank=true`)
     }
   }
 
@@ -89,12 +94,13 @@ export default function CreateSessionPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          stories: selectedIssues.map(i => ({
-            externalId: i.key,
-            summary: i.summary,
+          stories: selectedIssues.map((i, idx) => ({
+            externalId: i.key || `LOCAL-${Date.now()}-${idx}`,
+            summary: i.summary || i.title,
             description: i.description || '',
-            status: i.status,
-            type: i.type,
+            acceptanceCriteria: i.acceptanceCriteria || '',
+            status: i.status || 'To Do',
+            type: i.type || 'Story',
             storyPoints: i.storyPoints,
           }))
         })
@@ -107,6 +113,60 @@ export default function CreateSessionPage() {
       setError(err.message)
       setImporting(false)
     }
+  }
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    setError(null)
+    const ext = file.name.split('.').pop().toLowerCase()
+
+    if (ext === 'csv') {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          if (results.errors.length) {
+            setError('Error parsing CSV file.')
+            return
+          }
+          setCsvData({
+            headers: results.meta.fields,
+            rows: results.data
+          })
+        }
+      })
+    } else if (ext === 'xlsx' || ext === 'xls') {
+      const reader = new FileReader()
+      reader.onload = (evt) => {
+        try {
+          const data = evt.target.result
+          const workbook = XLSX.read(data, { type: 'binary' })
+          const sheetName = workbook.SheetNames[0]
+          const worksheet = workbook.Sheets[sheetName]
+          const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+          if (json.length < 2) throw new Error('Spreadsheet is empty or has no data rows.')
+          
+          const headers = json[0]
+          const rows = json.slice(1).map(row => {
+            let obj = {}
+            headers.forEach((h, i) => obj[h] = row[i])
+            return obj
+          })
+          
+          setCsvData({ headers, rows })
+        } catch (err) {
+          setError('Error parsing Excel file: ' + err.message)
+        }
+      }
+      reader.readAsBinaryString(file)
+    } else {
+      setError('Unsupported file type. Please upload a .csv or .xlsx file.')
+    }
+    
+    // reset input
+    e.target.value = null
   }
 
   const renderJumpstartOption = () => (
@@ -240,18 +300,24 @@ export default function CreateSessionPage() {
                 </div>
 
                 {/* File Upload Card */}
-                <div className="bg-surface-container-highest border border-outline-variant rounded-xl p-md flex flex-col items-center justify-center text-center gap-sm hover:border-primary/50 transition-colors opacity-70 cursor-not-allowed">
-                  <span className="material-symbols-outlined text-[32px] text-secondary">upload_file</span>
+                <label className="bg-surface-container-highest border border-outline-variant rounded-xl p-md flex flex-col items-center justify-center text-center gap-sm hover:border-secondary/50 transition-colors cursor-pointer group">
+                  <input 
+                    type="file" 
+                    accept=".csv, .xlsx, .xls"
+                    className="hidden" 
+                    onChange={handleFileUpload} 
+                  />
+                  <span className="material-symbols-outlined text-[32px] text-secondary group-hover:scale-110 transition-transform">upload_file</span>
                   <div>
                     <h3 className="font-label-lg text-on-surface">Upload CSV / Excel</h3>
                     <p className="font-body-sm text-on-surface-variant mt-1 mb-3 text-balance">
                       Import stories from a spreadsheet file.
                     </p>
                   </div>
-                  <span className="bg-surface-container-highest border border-outline-variant px-3 py-1 rounded font-label-sm text-on-surface-variant">
-                    Coming Soon
+                  <span className="bg-surface-container-highest border border-secondary px-3 py-1 rounded font-label-sm text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
+                    Select File
                   </span>
-                </div>
+                </label>
               </div>
 
               {renderJumpstartOption()}
@@ -292,6 +358,18 @@ export default function CreateSessionPage() {
                 <span className="material-symbols-outlined text-[16px]">arrow_back</span>
                 Change Filter
               </button>
+            </div>
+          )}
+
+          {currentStep === 5 && (
+            <div className="flex flex-col gap-md animate-fade-in w-full max-w-[800px] mx-auto">
+              <CsvMappingUI
+                headers={csvData.headers}
+                rows={csvData.rows}
+                loading={importing}
+                onImport={handleImportStories}
+                onCancel={() => setCsvData(null)}
+              />
             </div>
           )}
         </div>

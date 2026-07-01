@@ -6,12 +6,12 @@ import { QRCodeSVG } from 'qrcode.react'
  * Left: QR code. Right: headline, room code, copy URL, Start Session CTA.
  * Does NOT close on outside click.
  */
-export default function WelcomeQrModal({ open, sessionCode, hostName, onClose }) {
+export default function WelcomeQrModal({ open, sessionCode, hostName, onClose, isBlank }) {
   const [copied, setCopied] = useState(false)
 
   if (!open || !sessionCode) return null
 
-  const joinUrl = `${window.location.origin}/join/${sessionCode}`
+  const joinUrl = `${window.location.origin}/join/${sessionCode}${isBlank ? '?blank=true' : ''}`
 
   const handleCopy = () => {
     navigator.clipboard?.writeText(joinUrl)

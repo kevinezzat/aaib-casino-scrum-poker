@@ -1,77 +1,88 @@
 import React, { useState } from 'react'
 
-/**
- * IssueSidebar — right sidebar, desktop only.
- * HTML ref: lines 855–904 + tab content from initTabs() lines 998–1061.
- */
+export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, stories = [], onSelectIssue }) {
+  if (!issue && !isHost) return null // nothing to show if no issue and not a host
 
-const TAB_CONTENT = {
-  context: (
-    <div className="space-y-sm">
-      {[
-        ['Type',     <span className="font-body-sm text-body-sm text-on-surface font-medium bg-surface-container px-xs py-[2px] rounded">Story</span>],
-        ['Priority', <span className="font-body-sm text-body-sm text-primary-container font-semibold">High</span>],
-        ['Sprint',   <span className="font-body-sm text-body-sm text-on-surface font-medium">Sprint 14</span>],
-        ['Reporter', <span className="font-body-sm text-body-sm text-on-surface font-medium">Ahmed K.</span>],
-        ['Assignee', <span className="font-body-sm text-body-sm text-on-surface font-medium">Unassigned</span>],
-        ['Labels',   (
-          <div className="flex gap-xs">
-            <span className="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-xs py-[1px] rounded font-bold">auth</span>
-            <span className="font-label-sm text-[10px] bg-tertiary-fixed text-on-tertiary-fixed px-xs py-[1px] rounded font-bold">oauth</span>
-          </div>
-        )],
-      ].map(([label, value]) => (
-        <div key={label} className="flex items-center justify-between">
-          <span className="font-label-sm text-label-sm text-on-surface-variant uppercase font-bold">{label}</span>
-          {value}
-        </div>
-      ))}
-    </div>
-  ),
-  description: (
+  const TABS = [
+    { id: 'description', icon: 'description',  label: 'Description' },
+    { id: 'criteria',    icon: 'fact_check',   label: 'Criteria' },
+  ]
+
+  if (isHost) {
+    TABS.unshift({ id: 'queue', icon: 'list', label: 'Queue' })
+  }
+
+  // Ensure active tab is valid
+  const currentTab = TABS.find(t => t.id === activeTab) ? activeTab : TABS[0].id
+
+  const renderDescription = () => (
     <>
       <p className="font-body-sm text-body-sm text-on-surface leading-relaxed mb-sm">
-        As a user, I want to be able to log in using my Google or Microsoft account so that I don't have to remember another password.
+        {issue?.description || 'No description provided.'}
       </p>
-      <h3 className="font-body-sm text-body-sm font-bold text-secondary mb-xs mt-md uppercase tracking-wider">
-        Acceptance Criteria
-      </h3>
-      <ul className="font-body-sm text-body-sm text-on-surface-variant list-disc pl-sm space-y-xs">
-        <li>OAuth buttons are visible on login screen</li>
-        <li>Successful redirect to dashboard</li>
-        <li>Handling of denied permissions gracefully</li>
-      </ul>
+      {issue?.acceptanceCriteria && (
+        <>
+          <h3 className="font-body-sm text-body-sm font-bold text-secondary mb-xs mt-md uppercase tracking-wider">
+            Acceptance Criteria
+          </h3>
+          <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+            {issue.acceptanceCriteria.split('\n').map((line, i) => (
+              <span key={i}>
+                {line}
+                <br />
+              </span>
+            ))}
+          </p>
+        </>
+      )}
     </>
-  ),
-  criteria: (
+  )
+
+  const renderCriteria = () => (
     <div className="space-y-sm">
-      {[
-        ['check_circle', 'text-secondary', true,  'OAuth buttons are visible on login screen'],
-        ['radio_button_unchecked', 'text-on-surface-variant', false, 'Successful redirect to dashboard'],
-        ['radio_button_unchecked', 'text-on-surface-variant', false, 'Handling of denied permissions gracefully'],
-        ['radio_button_unchecked', 'text-on-surface-variant', false, 'Token refresh logic on session timeout'],
-      ].map(([icon, iconColor, filled, text]) => (
-        <div key={text} className="flex items-start gap-sm">
-          <span
-            className={`material-symbols-outlined ${iconColor} text-[18px] mt-[2px]`}
-            style={filled ? { fontVariationSettings: "'FILL' 1" } : {}}
-          >
-            {icon}
-          </span>
-          <span className="font-body-sm text-body-sm text-on-surface">{text}</span>
-        </div>
-      ))}
+      <div className="flex items-start gap-sm">
+        <span className="material-symbols-outlined text-secondary text-[18px] mt-[2px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+        <span className="font-body-sm text-body-sm text-on-surface">Criteria feature coming soon</span>
+      </div>
     </div>
-  ),
-}
+  )
 
-const TABS = [
-  { id: 'context',     icon: 'info',         label: 'Context' },
-  { id: 'description', icon: 'description',  label: 'Description' },
-  { id: 'criteria',    icon: 'fact_check',   label: 'Criteria' },
-]
+  const renderQueue = () => {
+    if (!stories || stories.length === 0) {
+      return <p className="text-on-surface-variant font-body-sm">No stories imported.</p>
+    }
+    return (
+      <div className="flex flex-col gap-xs">
+        {stories.map(story => {
+          const isActive = issue?._id === story._id
+          return (
+            <button
+              key={story._id}
+              onClick={() => onSelectIssue(story._id)}
+              className={`text-left p-sm rounded-lg border transition-all ${
+                isActive 
+                  ? 'bg-primary-container border-primary text-on-primary-container' 
+                  : 'bg-surface-container border-outline-variant hover:border-primary/50 text-on-surface'
+              }`}
+            >
+              <div className="font-label-sm font-bold opacity-80">{story.externalId || story.key}</div>
+              <div className="font-body-sm truncate">{story.summary || story.title}</div>
+            </button>
+          )
+        })}
+      </div>
+    )
+  }
 
-export default function IssueSidebar({ issueKey, issueTitle, activeTab, onTabChange }) {
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case 'queue': return renderQueue()
+      case 'description': return renderDescription()
+      case 'criteria': return renderCriteria()
+      default: return renderDescription()
+    }
+  }
+
   return (
     <aside
       id="sidebar"
@@ -84,10 +95,12 @@ export default function IssueSidebar({ issueKey, issueTitle, activeTab, onTabCha
             <span className="material-symbols-outlined text-[18px]">integration_instructions</span>
           </div>
           <div>
-            <h2 id="sidebar-title" className="font-headline-md text-[20px] text-primary m-0 font-bold">
-              Issue Details
+            <h2 id="sidebar-title" className="font-headline-md text-[20px] text-primary m-0 font-bold truncate w-56">
+              {issue?.externalId || issue?.key || 'Issue Details'}
             </h2>
-            <p className="font-body-sm text-body-sm text-on-surface-variant m-0">Jira Context</p>
+            <p className="font-body-sm text-body-sm text-on-surface-variant m-0 truncate w-56">
+              {issue?.summary || issue?.title || 'Select an issue'}
+            </p>
           </div>
         </div>
       </div>
@@ -95,7 +108,7 @@ export default function IssueSidebar({ issueKey, issueTitle, activeTab, onTabCha
       {/* Tab nav */}
       <nav className="flex flex-col mb-auto px-base gap-xs">
         {TABS.map((tab) => {
-          const isActive = activeTab === tab.id
+          const isActive = currentTab === tab.id
           return (
             <button
               key={tab.id}
@@ -119,22 +132,52 @@ export default function IssueSidebar({ issueKey, issueTitle, activeTab, onTabCha
         id="sidebar-content"
         className="flex-1 p-md overflow-y-auto mt-sm border-t border-outline-variant transition-all"
       >
-        {TAB_CONTENT[activeTab] ?? TAB_CONTENT.description}
+        {renderTabContent()}
       </div>
 
+      {/* Host Navigation Controls */}
+      {isHost && stories?.length > 1 && (
+        <div className="p-md border-t border-outline-variant flex items-center justify-between gap-sm bg-surface-container-highest">
+          <button
+            onClick={() => {
+              const idx = stories.findIndex(s => s._id === issue?._id)
+              if (idx > 0) onSelectIssue(stories[idx - 1]._id)
+            }}
+            disabled={!issue || stories.findIndex(s => s._id === issue._id) <= 0}
+            className="flex-1 bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors font-label-sm py-xs rounded-lg disabled:opacity-50 flex justify-center items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+            Prev
+          </button>
+          <button
+            onClick={() => {
+              const idx = stories.findIndex(s => s._id === issue?._id)
+              if (idx !== -1 && idx < stories.length - 1) onSelectIssue(stories[idx + 1]._id)
+            }}
+            disabled={!issue || stories.findIndex(s => s._id === issue._id) >= stories.length - 1}
+            className="flex-1 bg-surface-container border border-outline-variant text-on-surface hover:bg-surface-container-high transition-colors font-label-sm py-xs rounded-lg disabled:opacity-50 flex justify-center items-center gap-1"
+          >
+            Next
+            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          </button>
+        </div>
+      )}
+
       {/* View in Jira */}
-      <div className="p-md border-t border-outline-variant">
-        <a
-          id="btn-jira"
-          className="block text-center bg-surface border border-outline-variant text-on-surface font-label-md text-label-md py-sm rounded-lg hover:bg-surface-bright hover:border-secondary transition-all uppercase font-semibold group"
-          href="#"
-        >
-          View in Jira{' '}
-          <span className="material-symbols-outlined text-[14px] align-middle group-hover:translate-x-0.5 transition-transform">
-            open_in_new
-          </span>
-        </a>
-      </div>
+      {issue?.externalId && (
+        <div className="p-md border-t border-outline-variant">
+          <a
+            id="btn-jira"
+            className="block text-center bg-surface border border-outline-variant text-on-surface font-label-md text-label-md py-sm rounded-lg hover:bg-surface-bright hover:border-secondary transition-all uppercase font-semibold group"
+            href="#"
+          >
+            View in Jira{' '}
+            <span className="material-symbols-outlined text-[14px] align-middle group-hover:translate-x-0.5 transition-transform">
+              open_in_new
+            </span>
+          </a>
+        </div>
+      )}
     </aside>
   )
 }

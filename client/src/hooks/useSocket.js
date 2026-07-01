@@ -24,6 +24,9 @@ export function useSocket() {
   const [voteCount, setVoteCount] = useState({ count: 0, total: 0 })
   const [revealedVotes, setRevealedVotes] = useState(null)
   const [roundStatus, setRoundStatus] = useState('waiting')
+  const [selectedIssue, setSelectedIssue] = useState(null)
+  const [sessionEnded, setSessionEnded] = useState(false)
+  const [participantLeft, setParticipantLeft] = useState(null)
 
   // ── Initialise socket connection (once) ───────────────────────────
   useEffect(() => {
@@ -73,6 +76,18 @@ export function useSocket() {
       setRevealedVotes(null)
       setVoteCount({ count: 0, total: 0 })
       setRoundStatus(data.status || 'voting')
+    })
+
+    socket.on('issue-selected', (data) => {
+      setSelectedIssue(data.story || null)
+    })
+
+    socket.on('session-ended', (data) => {
+      setSessionEnded(true)
+    })
+
+    socket.on('participant-left', (data) => {
+      setParticipantLeft({ name: data.name, timestamp: Date.now() })
     })
 
     // Cleanup on unmount
@@ -183,6 +198,49 @@ export function useSocket() {
     })
   }, [])
 
+  /**
+   * Select a new issue to estimate (host only).
+   * @param {string} sessionId
+   * @param {string} storyId
+   * @returns {Promise<object>}
+   */
+  const selectIssue = useCallback((sessionId, storyId) => {
+    return new Promise((resolve, reject) => {
+      const socket = socketRef.current
+      if (!socket?.connected) {
+        return reject(new Error('Socket not connected'))
+      }
+      socket.emit('select-issue', { sessionId, storyId }, (response) => {
+        if (response?.error) {
+          reject(new Error(response.error))
+        } else {
+          resolve(response)
+        }
+      })
+    })
+  }, [])
+
+  /**
+   * End the session (host only).
+   * @param {string} sessionId
+   * @returns {Promise<object>}
+   */
+  const endSession = useCallback((sessionId) => {
+    return new Promise((resolve, reject) => {
+      const socket = socketRef.current
+      if (!socket?.connected) {
+        return reject(new Error('Socket not connected'))
+      }
+      socket.emit('end-session', { sessionId }, (response) => {
+        if (response?.error) {
+          reject(new Error(response.error))
+        } else {
+          resolve(response)
+        }
+      })
+    })
+  }, [])
+
   return {
     // Raw socket (escape hatch)
     socket: socketRef.current,
@@ -195,11 +253,16 @@ export function useSocket() {
     voteCount,
     revealedVotes,
     roundStatus,
+    selectedIssue,
+    sessionEnded,
+    participantLeft,
 
     // Emit helpers
     joinSession,
     placeChip,
     revealChips,
     newRound,
+    selectIssue,
+    endSession,
   }
 }
