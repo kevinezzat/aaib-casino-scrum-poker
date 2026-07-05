@@ -27,6 +27,7 @@ export function useSocket() {
   const [selectedIssue, setSelectedIssue] = useState(null)
   const [sessionEnded, setSessionEnded] = useState(false)
   const [participantLeft, setParticipantLeft] = useState(null)
+  const [lockedEstimation, setLockedEstimation] = useState(null) // { storyId, finalValue, nextStory }
 
   // ── Initialise socket connection (once) ───────────────────────────
   useEffect(() => {
@@ -76,10 +77,25 @@ export function useSocket() {
       setRevealedVotes(null)
       setVoteCount({ count: 0, total: 0 })
       setRoundStatus(data.status || 'voting')
+      setLockedEstimation(null)
     })
 
     socket.on('issue-selected', (data) => {
       setSelectedIssue(data.story || null)
+    })
+
+    socket.on('estimation-locked', (data) => {
+      // Update round status back to voting so the table resets
+      setRoundStatus(data.status || 'voting')
+      setRevealedVotes(null)
+      setVoteCount({ count: 0, total: 0 })
+      // Expose locked result so the page can auto-advance the issue
+      setLockedEstimation({
+        storyId: data.storyId,
+        finalValue: data.finalValue,
+        story: data.story,
+        nextStory: data.nextStory || null,
+      })
     })
 
     socket.on('session-ended', (data) => {
@@ -221,6 +237,34 @@ export function useSocket() {
   }, [])
 
   /**
+   * Lock in a final estimation for a story (host only).
+   * @param {string} sessionId
+   * @param {string} storyId
+   * @param {number|string} finalValue — the chosen estimation
+   * @param {string|null} nextStoryId — optional ID of next story to auto-advance to
+   * @returns {Promise<object>}
+   */
+  const lockEstimation = useCallback((sessionId, storyId, finalValue, nextStoryId = null) => {
+    return new Promise((resolve, reject) => {
+      const socket = socketRef.current
+      if (!socket?.connected) {
+        return reject(new Error('Socket not connected'))
+      }
+      socket.emit(
+        'lock-estimation',
+        { sessionId, storyId, finalValue, nextStoryId },
+        (response) => {
+          if (response?.error) {
+            reject(new Error(response.error))
+          } else {
+            resolve(response)
+          }
+        }
+      )
+    })
+  }, [])
+
+  /**
    * End the session (host only).
    * @param {string} sessionId
    * @returns {Promise<object>}
@@ -256,6 +300,7 @@ export function useSocket() {
     selectedIssue,
     sessionEnded,
     participantLeft,
+    lockedEstimation,
 
     // Emit helpers
     joinSession,
@@ -264,5 +309,6 @@ export function useSocket() {
     newRound,
     selectIssue,
     endSession,
+    lockEstimation,
   }
 }

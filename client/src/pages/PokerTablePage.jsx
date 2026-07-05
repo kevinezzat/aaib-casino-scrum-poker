@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useSocket } from '../hooks/useSocket'
 import { usePokerTable } from '../hooks/usePokerTable'
@@ -11,6 +11,7 @@ import { MobileTablePanel, MobileStatusPanel, MobileTeamPanel } from '../compone
 import QrPopover from '../components/QrPopover'
 import WelcomeQrModal from '../components/WelcomeQrModal'
 import ConfirmModal from '../components/ConfirmModal'
+import LockEstimationModal from '../components/LockEstimationModal'
 import { fetchApi } from '../utils/api'
 
 // We will fetch stories and use the socket's selectedIssue.
@@ -34,6 +35,7 @@ export default function PokerTablePage() {
   const [localPlayer, setLocalPlayer] = useState(null)
   const [playerRole, setPlayerRole] = useState('voter')
   const [sessionId, setSessionId] = useState(null)
+  const [deckType, setDeckType] = useState('fibonacci')
   const [isHost, setIsHost] = useState(false)
   const [joinError, setJoinError] = useState(null)
   const [showQr, setShowQr] = useState(false)
@@ -41,6 +43,8 @@ export default function PokerTablePage() {
   const [stories, setStories] = useState([])
   const [confirmModal, setConfirmModal] = useState({ open: false, isEnd: false })
   const [toast, setToast] = useState(null)
+  const [showLockModal, setShowLockModal] = useState(false)
+  const [lockedValue, setLockedValue] = useState(null)
   const joiningRef = useRef(false)
 
   // ── Socket connection ───────────────────────────────────────────
@@ -74,6 +78,7 @@ export default function PokerTablePage() {
         setSessionId(response.sessionId)
         const hostConfirmed = response.isHost === true
         setIsHost(hostConfirmed)
+        if (response.deckType) setDeckType(response.deckType)
         // Auto-open welcome modal for the host on first join
         if (hostConfirmed) setShowWelcomeQr(true)
       })
@@ -93,11 +98,13 @@ export default function PokerTablePage() {
     revealChips: socket.revealChips,
     newRound: socket.newRound,
     placeChip: socket.placeChip,
+    lockEstimation: socket.lockEstimation,
   }
 
   const {
     timerSeconds,
     revealed,
+    isLocked,
     activeSidebarTab,
     selectedChip,
     chipPlaced,
@@ -133,6 +140,57 @@ export default function PokerTablePage() {
   const handleSelectIssue = (storyId) => {
     socket.selectIssue(sessionId, storyId).catch(err => console.error(err))
   }
+
+  // ── Deck values for the lock modal ──────────────────────────────
+  const DECK_VALUES = {
+    fibonacci: [1, 2, 3, 5, 8, 13, 20, 40, '?'],
+    'powers-of-2': [1, 2, 4, 8, 16, 32, 64, '?'],
+    tshirt: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '?'],
+  }
+  const deckValues = DECK_VALUES[deckType] || DECK_VALUES.fibonacci
+
+  // ── Handle estimation-locked socket event ────────────────────────
+  useEffect(() => {
+    if (socket.lockedEstimation === null) {
+      // Round was reset — clear the locked badge
+      setLockedValue(null)
+      return
+    }
+    const { storyId, finalValue, nextStory } = socket.lockedEstimation
+
+    // Update the local stories array with the new storyPoints
+    setStories((prev) =>
+      prev.map((s) =>
+        s._id === storyId ? { ...s, storyPoints: finalValue } : s
+      )
+    )
+
+    // Save locked value for the badge display
+    setLockedValue(finalValue)
+    setShowLockModal(false)
+
+    // Auto-advance: select the next story via socket
+    if (nextStory && isHost) {
+      socket.selectIssue(sessionId, nextStory._id).catch(err => console.error(err))
+    }
+  }, [socket.lockedEstimation])
+
+  // ── Handle dealer confirming lock-in ────────────────────────────
+  const handleConfirmLock = useCallback((finalValue) => {
+    if (!currentIssue || !sessionId) return
+
+    // Find the next story in the list for auto-advance
+    const currentIdx = stories.findIndex((s) => s._id === currentIssue._id)
+    const nextStory = currentIdx !== -1 && currentIdx < stories.length - 1
+      ? stories[currentIdx + 1]
+      : null
+
+    handlers.handleLockEstimation(
+      currentIssue._id,
+      finalValue,
+      nextStory?._id ?? null
+    )
+  }, [currentIssue, sessionId, stories, handlers])
 
   // Dealer name: prefer the live socket participant, fall back to local player name
   // so the host sees their name immediately before the round-trip completes.
@@ -255,6 +313,16 @@ export default function PokerTablePage() {
         onCancel={() => setConfirmModal({ open: false, isEnd: false })}
       />
 
+      {/* Lock Estimation Modal — host only, appears after reveal */}
+      <LockEstimationModal
+        open={showLockModal}
+        votes={socket.revealedVotes || []}
+        deckValues={deckValues}
+        issueKey={currentIssue?.externalId || currentIssue?.key}
+        onConfirm={handleConfirmLock}
+        onCancel={() => setShowLockModal(false)}
+      />
+
       {/* Simple Toast for Participant Left */}
       {toast && (
         <div className="fixed top-[64px] right-4 z-50 animate-fade-in bg-surface-container-high text-on-surface px-md py-sm rounded-xl shadow-lg border border-outline-variant flex items-center gap-xs">
@@ -272,11 +340,15 @@ export default function PokerTablePage() {
           issue={currentIssue}
           spectators={spectators}
           revealed={revealed}
+          isLocked={isLocked}
+          lockedValue={lockedValue}
           isHost={isHost}
           isSpectator={isSpectator}
           sessionCode={code}
           dealerName={dealerName}
-          onReveal={revealed ? handlers.handleNewRound : handlers.handleReveal}
+          onReveal={handlers.handleReveal}
+          onNewRound={handlers.handleNewRound}
+          onOpenLockModal={() => setShowLockModal(true)}
         />
 
         {/* Mobile panels */}

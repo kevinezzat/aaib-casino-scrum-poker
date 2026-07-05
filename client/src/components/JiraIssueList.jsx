@@ -55,6 +55,8 @@ export default function JiraIssueList({ issues, onImport, loading }) {
               <th className="p-3 border-b border-outline-variant font-label-sm text-on-surface-variant">Summary</th>
               <th className="p-3 border-b border-outline-variant font-label-sm text-on-surface-variant">Type</th>
               <th className="p-3 border-b border-outline-variant font-label-sm text-on-surface-variant">Points</th>
+              <th className="p-3 border-b border-outline-variant font-label-sm text-on-surface-variant">Description</th>
+              <th className="p-3 border-b border-outline-variant font-label-sm text-on-surface-variant">Acceptance Criteria</th>
             </tr>
           </thead>
           <tbody>
@@ -75,6 +77,8 @@ export default function JiraIssueList({ issues, onImport, loading }) {
                     {issue.type}
                   </span>
                 </td>
+                <td className="p-3 font-body-sm text-on-surface">{issue.acceptanceCriteria}</td>
+                <td className="p-3 font-body-sm text-on-surface">{issue.description}</td>
                 <td className="p-3">
                   <span className="font-label-sm text-on-surface-variant">
                     {issue.storyPoints !== null ? issue.storyPoints : '-'}

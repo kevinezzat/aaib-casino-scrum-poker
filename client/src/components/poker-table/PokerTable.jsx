@@ -7,9 +7,22 @@ import StatusPill from './StatusPill'
 /**
  * PokerTable — the full desktop table canvas.
  * Enhanced: multi-ring border with gold/dark trim, richer felt vignette.
- * HTML ref: lines 569–654.
  */
-export default function PokerTable({ players, spectators = [], issue, revealed, onReveal, isHost, isSpectator, sessionCode, dealerName }) {
+export default function PokerTable({
+  players,
+  spectators = [],
+  issue,
+  revealed,
+  isLocked,
+  lockedValue,
+  onReveal,
+  onNewRound,
+  onOpenLockModal,
+  isHost,
+  isSpectator,
+  sessionCode,
+  dealerName,
+}) {
   // Only count voters toward the vote tally
   const voteCount = players.filter((p) => p.hasVoted || p.vote).length
 
@@ -64,7 +77,11 @@ export default function PokerTable({ players, spectators = [], issue, revealed, 
               issueKey={issue?.externalId || issue?.key}
               issueTitle={issue?.summary || issue?.title}
               revealed={revealed}
+              isLocked={isLocked}
+              lockedValue={lockedValue}
               onReveal={onReveal}
+              onNewRound={onNewRound}
+              onOpenLockModal={onOpenLockModal}
               isHost={isHost}
             />
 

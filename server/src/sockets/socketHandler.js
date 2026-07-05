@@ -305,6 +305,83 @@ function registerSocketEvents(io) {
       }
     });
 
+    // ── lock-estimation ───────────────────────────────────────────
+    socket.on('lock-estimation', async (payload, callback) => {
+      try {
+        const { sessionId, storyId, finalValue, nextStoryId } = payload || {};
+
+        if (!sessionId || !storyId || finalValue === undefined || finalValue === null) {
+          return callback?.({ error: 'sessionId, storyId and finalValue are required' });
+        }
+
+        const session = await Session.findById(sessionId);
+        if (!session) {
+          return callback?.({ error: 'Session not found' });
+        }
+
+        // Host-only guard
+        const participantId = socket.data?.participantId;
+        if (!participantId || session.hostId !== participantId.toString()) {
+          return callback?.({ error: 'Only the host can lock an estimation' });
+        }
+
+        const Story = require('../models/Story');
+
+        // Persist the locked estimation on the story
+        const updatedStory = await Story.findByIdAndUpdate(
+          storyId,
+          {
+            storyPoints: finalValue,
+            lockedAt: new Date(),
+            lockedBy: participantId.toString(),
+          },
+          { new: true }
+        );
+
+        if (!updatedStory) {
+          return callback?.({ error: 'Story not found' });
+        }
+
+        // Clear votes for this story so next round starts clean
+        await Vote.deleteMany({ sessionId, itemId: 'current' });
+
+        // Resolve next story (auto-advance)
+        let nextStory = null;
+        if (nextStoryId) {
+          nextStory = await Story.findById(nextStoryId).lean();
+        }
+
+        // Reset session to voting for the next round
+        session.status = 'voting';
+        await session.save();
+
+        // Broadcast to all room clients
+        const roomCode = socket.data?.roomCode;
+        if (roomCode) {
+          io.to(roomCode).emit('estimation-locked', {
+            storyId,
+            finalValue,
+            story: updatedStory,
+            nextStory,
+            status: 'voting',
+          });
+
+          // Refresh participant hasVoted flags
+          const participants = await buildParticipantList(sessionId, 'current');
+          io.to(roomCode).emit('participants-updated', { participants });
+        }
+
+        callback?.({ success: true, story: updatedStory });
+
+        console.log(
+          `[socket] estimation locked: story ${storyId} = ${finalValue} in session ${sessionId}`
+        );
+      } catch (err) {
+        console.error('[socket] lock-estimation error:', err.message);
+        callback?.({ error: 'Failed to lock estimation' });
+      }
+    });
+
     // ── new-round ─────────────────────────────────────────────────
     socket.on('new-round', async (payload, callback) => {
       try {

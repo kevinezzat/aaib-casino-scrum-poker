@@ -42,6 +42,14 @@ const storySchema = new mongoose.Schema(
       type: Number,
       default: null,
     },
+    lockedAt: {
+      type: Date,
+      default: null,
+    },
+    lockedBy: {
+      type: String, // Participant._id as string
+      default: null,
+    },
     order: {
       type: Number,
       default: 0,

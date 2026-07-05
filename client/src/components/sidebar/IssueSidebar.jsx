@@ -55,6 +55,7 @@ export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, st
       <div className="flex flex-col gap-xs">
         {stories.map(story => {
           const isActive = issue?._id === story._id
+          const isEstimated = story.storyPoints !== null && story.storyPoints !== undefined
           return (
             <button
               key={story._id}
@@ -65,7 +66,23 @@ export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, st
                   : 'bg-surface-container border-outline-variant hover:border-primary/50 text-on-surface'
               }`}
             >
-              <div className="font-label-sm font-bold opacity-80">{story.externalId || story.key}</div>
+              <div className="flex items-center justify-between gap-xs">
+                <div className="font-label-sm font-bold opacity-80 truncate">{story.externalId || story.key}</div>
+                {isEstimated && (
+                  <span
+                    className="flex-shrink-0 flex items-center gap-[3px] bg-secondary/15 border border-secondary/40 rounded-full px-xs py-[1px]"
+                    title={`Locked estimation: ${story.storyPoints}`}
+                  >
+                    <span
+                      className="material-symbols-outlined text-[11px] text-secondary"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >lock</span>
+                    <span className="font-label-sm text-secondary font-bold" style={{ fontSize: '11px' }}>
+                      {story.storyPoints}
+                    </span>
+                  </span>
+                )}
+              </div>
               <div className="font-body-sm truncate">{story.summary || story.title}</div>
             </button>
           )

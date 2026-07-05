@@ -84,7 +84,7 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
     if (typeof nextPageToken !== 'string') {
       nextPageToken = null;
     }
-    
+
     setFetchingIssues(true);
     setError(null);
     try {
@@ -102,8 +102,9 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
 
       const res = await fetchApi(url);
       if (!res.ok) throw new Error('Failed to fetch issues');
-      
+
       const data = await res.json();
+      console.log(`fetch issues data response ${JSON.stringify(data)}`);
       // Pass pagination info in case the parent component needs it
       onIssuesFetched(data.issues || [], {
         nextPageToken: data.nextPageToken,
@@ -122,7 +123,7 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
         <span className="material-symbols-outlined text-[28px] text-primary">filter_alt</span>
         <h3 className="font-label-lg text-on-surface">Select Source</h3>
       </div>
-      
+
       {error && (
         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 font-body-sm flex items-center gap-2">
           <span className="material-symbols-outlined text-[18px]">error</span>

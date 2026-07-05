@@ -276,6 +276,11 @@ function shapeIssue(raw) {
     summary: f.summary ?? '',
     status: f.status?.name ?? 'Unknown',
     type: f.issuetype?.name ?? 'Story',
+    description: extractAdfText(f.description),
+    // Acceptance criteria are often stored in a custom field or as the first
+    // comment labelled "Acceptance Criteria" — we extract the raw ADF for now
+    // and let the frontend render it. A custom field approach can be added later.
+    acceptanceCriteria: null, // TODO: map to your team's custom field if applicable
     // customfield_10016 = story points (next-gen), customfield_10028 = story points (classic)
     storyPoints: f.customfield_10016 ?? f.customfield_10028 ?? null,
   };
@@ -348,7 +353,7 @@ const getProjects = withJiraErrorHandling(async (req, res) => {
   }
 
   const data = await jiraRequest(sessionId, 'GET', '/project');
-  
+
   const projects = data.map(p => ({
     id: p.id,
     key: p.key,
@@ -376,7 +381,7 @@ const getBoards = withJiraErrorHandling(async (req, res) => {
   }
 
   const data = await jiraRequest(sessionId, 'GET', path, { apiPrefix: '/rest/agile/1.0' });
-  
+
   const boards = (data.values || []).map(b => ({
     id: b.id,
     name: b.name,
@@ -399,7 +404,7 @@ const getSprints = withJiraErrorHandling(async (req, res) => {
   }
 
   const data = await jiraRequest(sessionId, 'GET', `/board/${boardId}/sprint?state=active,future`, { apiPrefix: '/rest/agile/1.0' });
-  
+
   const sprints = (data.values || []).map(s => ({
     id: s.id,
     name: s.name,

@@ -63,6 +63,7 @@ export function usePokerTable({ socketHook } = {}) {
 
   // ── Revealed state (driven by socket or local toggle) ─────────────
   const revealed = socketHook?.roundStatus === 'revealed'
+  const isLocked = socketHook?.roundStatus === 'locked'
 
   const handleReveal = useCallback(() => {
     if (socketHook?.sessionId) {
@@ -77,6 +78,20 @@ export function usePokerTable({ socketHook } = {}) {
     if (socketHook?.sessionId) {
       socketHook.newRound(socketHook.sessionId).catch((err) => {
         console.error('[usePokerTable] newRound failed:', err.message)
+      })
+    }
+  }, [socketHook])
+
+  /**
+   * Lock in the final estimation for a story.
+   * @param {string} storyId — the story being estimated
+   * @param {number|string} finalValue — chosen estimation
+   * @param {string|null} nextStoryId — next story to auto-advance to
+   */
+  const handleLockEstimation = useCallback((storyId, finalValue, nextStoryId = null) => {
+    if (socketHook?.sessionId) {
+      socketHook.lockEstimation(socketHook.sessionId, storyId, finalValue, nextStoryId).catch((err) => {
+        console.error('[usePokerTable] lockEstimation failed:', err.message)
       })
     }
   }, [socketHook])
@@ -149,6 +164,7 @@ export function usePokerTable({ socketHook } = {}) {
   return {
     timerSeconds,
     revealed,
+    isLocked,
     activeSidebarTab,
     selectedChip,
     chipPlaced,
@@ -159,6 +175,7 @@ export function usePokerTable({ socketHook } = {}) {
     handlers: {
       handleReveal,
       handleNewRound,
+      handleLockEstimation,
       handleSidebarTab,
       handleChipSelect,
       handlePlaceChip,

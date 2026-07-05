@@ -41,7 +41,7 @@ const sessionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['waiting', 'voting', 'revealed', 'complete'],
+      enum: ['waiting', 'voting', 'revealed', 'locked', 'complete'],
       default: 'waiting',
     },
     deckType: {
