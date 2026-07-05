@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { fetchApi } from '../utils/api'
 
 export default function JoinSessionPage() {
   const { code } = useParams()
@@ -27,8 +28,7 @@ export default function JoinSessionPage() {
   useEffect(() => {
     async function fetchSession() {
       try {
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001'
-        const res = await fetch(`${API_URL}/api/sessions/${code}`)
+        const res = await fetchApi(`/api/sessions/${code}`)
         const data = await res.json()
 
         if (!res.ok) {

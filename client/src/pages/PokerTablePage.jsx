@@ -11,6 +11,7 @@ import { MobileTablePanel, MobileStatusPanel, MobileTeamPanel } from '../compone
 import QrPopover from '../components/QrPopover'
 import WelcomeQrModal from '../components/WelcomeQrModal'
 import ConfirmModal from '../components/ConfirmModal'
+import { fetchApi } from '../utils/api'
 
 // We will fetch stories and use the socket's selectedIssue.
 
@@ -112,7 +113,7 @@ export default function PokerTablePage() {
     if (!sessionId || isBlank) return
     const fetchSessionStories = async () => {
       try {
-        const res = await fetch(`/api/sessions/${sessionId}/stories`)
+        const res = await fetchApi(`/api/sessions/${sessionId}/stories`)
         if (res.ok) {
           const data = await res.json()
           setStories(data)
