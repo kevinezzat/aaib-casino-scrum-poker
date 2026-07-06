@@ -204,13 +204,15 @@ export default function PokerTablePage() {
       const normalizedCode = code.toUpperCase()
       localStorage.removeItem(`scrum_host_${normalizedCode}`)
 
-      if (isHost) {
-        navigate('/')
-      } else {
-        navigate('/thank-you')
-      }
+      // Navigate to session-end page with summary data
+      navigate('/session-end', {
+        state: {
+          sessionSummary: socket.sessionSummaryData,
+          summaryRounds: socket.summaryRounds || [],
+        },
+      })
     }
-  }, [socket.sessionEnded, navigate, code, isHost])
+  }, [socket.sessionEnded, navigate, code, isHost, socket.sessionSummaryData, socket.summaryRounds])
 
   // ── Participant Left Toast ───────────────────────────────────────
   useEffect(() => {
@@ -228,9 +230,8 @@ export default function PokerTablePage() {
   const handleConfirmAction = () => {
     setConfirmModal({ open: false, isEnd: false })
     if (confirmModal.isEnd) {
-      socket.endSession(sessionId).then(() => {
-        navigate('/')
-      }).catch(err => console.error(err))
+      // Host ending: the session-ended socket event will trigger navigation
+      socket.endSession(sessionId).catch(err => console.error(err))
     } else {
       navigate('/thank-you')
     }
@@ -279,6 +280,7 @@ export default function PokerTablePage() {
         onQrClick={() => setShowQr((v) => !v)}
         isHost={isHost}
         onLeaveAction={handleLeaveAction}
+        onSummaryClick={() => handlers.handleSidebarTab('summary')}
       />
 
       {/* QR popover (nav button) */}
@@ -385,6 +387,7 @@ export default function PokerTablePage() {
             isHost={isHost}
             stories={stories}
             onSelectIssue={handleSelectIssue}
+            summaryRounds={socket.summaryRounds || []}
           />
         )}
       </div>

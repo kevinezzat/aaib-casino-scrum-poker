@@ -4,7 +4,7 @@ import React from 'react'
  * TopNavBar — fixed top bar across desktop and mobile.
  * HTML ref: lines 523–558 of design-reference/index.html
  */
-export default function TopNavBar({ issueKey, timerSeconds, onTimerClick, onQrClick, isHost, onLeaveAction }) {
+export default function TopNavBar({ issueKey, timerSeconds, onTimerClick, onQrClick, isHost, onLeaveAction, onSummaryClick }) {
   const mins = Math.floor(timerSeconds / 60).toString().padStart(2, '0')
   const secs = (timerSeconds % 60).toString().padStart(2, '0')
   const timerWarning = timerSeconds <= 30
@@ -38,11 +38,11 @@ export default function TopNavBar({ issueKey, timerSeconds, onTimerClick, onQrCl
             Session Details
           </a>
           <a
-            id="nav-history"
-            className="nav-link text-on-surface-variant font-medium hover:text-on-surface px-base py-xs flex items-center h-full text-body-sm transition-colors"
-            href="#"
+            id="nav-summary"
+            className="nav-link text-on-surface-variant font-medium hover:text-on-surface px-base py-xs flex items-center h-full text-body-sm transition-colors cursor-pointer"
+            onClick={onSummaryClick}
           >
-            History
+            Summary
           </a>
         </div>
       </div>

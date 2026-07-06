@@ -28,6 +28,8 @@ export function useSocket() {
   const [sessionEnded, setSessionEnded] = useState(false)
   const [participantLeft, setParticipantLeft] = useState(null)
   const [lockedEstimation, setLockedEstimation] = useState(null) // { storyId, finalValue, nextStory }
+  const [summaryRounds, setSummaryRounds] = useState([]) // accumulated round summaries
+  const [sessionSummaryData, setSessionSummaryData] = useState(null) // final summary from session-ended
 
   // ── Initialise socket connection (once) ───────────────────────────
   useEffect(() => {
@@ -96,9 +98,34 @@ export function useSocket() {
         story: data.story,
         nextStory: data.nextStory || null,
       })
+      // Accumulate round summary for the live summary panel (deduplicate by storyId)
+      if (data.roundSummary) {
+        setSummaryRounds((prev) => {
+          const idx = prev.findIndex(
+            (r) => r.storyId?.toString() === data.roundSummary.storyId?.toString()
+          )
+          if (idx !== -1) {
+            // Replace existing entry (handles re-votes for the same story)
+            const updated = [...prev]
+            updated[idx] = data.roundSummary
+            return updated
+          }
+          return [...prev, data.roundSummary]
+        })
+      }
     })
 
     socket.on('session-ended', (data) => {
+      // Capture the session summary data before navigating away
+      if (data.sessionSummary) {
+        setSessionSummaryData(data.sessionSummary)
+
+        // Use server-accumulated roundSummaries as the authoritative source
+        // (they always have per-member vote details, unlike client state which can be lossy)
+        if (data.sessionSummary.roundSummaries?.length > 0) {
+          setSummaryRounds(data.sessionSummary.roundSummaries)
+        }
+      }
       setSessionEnded(true)
     })
 
@@ -301,6 +328,8 @@ export function useSocket() {
     sessionEnded,
     participantLeft,
     lockedEstimation,
+    summaryRounds,
+    sessionSummaryData,
 
     // Emit helpers
     joinSession,

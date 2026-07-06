@@ -4,6 +4,12 @@ const Session = require('../models/Session');
 const Participant = require('../models/Participant');
 const Vote = require('../models/Vote');
 
+// ── In-memory store for round summaries (per-session) ─────────────
+// Accumulates round-by-round vote snapshots so the session-ended event
+// can include per-member vote details even though votes are deleted
+// from the DB after each lock-estimation.
+const sessionRoundSummaries = new Map();
+
 // ── Color palette for participant avatars ─────────────────────────
 const AVATAR_COLORS = [
   '#6c748b', // tertiary-container
@@ -342,6 +348,43 @@ function registerSocketEvents(io) {
           return callback?.({ error: 'Story not found' });
         }
 
+        // ── Capture round votes BEFORE deleting them ──────────────
+        const roundVotes = await Vote.find({ sessionId, itemId: 'current' }).lean();
+        const allParticipants = await Participant.find({ sessionId })
+          .select('_id name')
+          .lean();
+        const nameMap = {};
+        allParticipants.forEach((p) => {
+          nameMap[p._id.toString()] = p.name;
+        });
+
+        const roundSummary = {
+          storyId: updatedStory._id,
+          externalId: updatedStory.externalId,
+          summary: updatedStory.summary,
+          finalValue,
+          votes: roundVotes.map((v) => ({
+            participantName: nameMap[v.participantId.toString()] || 'Unknown',
+            value: v.value,
+          })),
+        };
+
+        // Store the round summary in-memory for the session-end broadcast
+        const sid = sessionId.toString();
+        if (!sessionRoundSummaries.has(sid)) {
+          sessionRoundSummaries.set(sid, []);
+        }
+        // Deduplicate by storyId (in case of retries)
+        const existing = sessionRoundSummaries.get(sid);
+        const existIdx = existing.findIndex(
+          (r) => r.storyId.toString() === roundSummary.storyId.toString()
+        );
+        if (existIdx !== -1) {
+          existing[existIdx] = roundSummary;
+        } else {
+          existing.push(roundSummary);
+        }
+
         // Clear votes for this story so next round starts clean
         await Vote.deleteMany({ sessionId, itemId: 'current' });
 
@@ -363,6 +406,7 @@ function registerSocketEvents(io) {
             finalValue,
             story: updatedStory,
             nextStory,
+            roundSummary,
             status: 'voting',
           });
 
@@ -479,16 +523,53 @@ function registerSocketEvents(io) {
           return callback?.({ error: 'Only the host can end the session' });
         }
 
-        // Broadcast to room that session has ended
+        // ── Build session summary BEFORE deleting data ────────────
+        const Story = require('../models/Story');
+        const lockedStories = await Story.find({
+          sessionId,
+          storyPoints: { $ne: null },
+        }).sort({ order: 1 }).lean();
+
+        const allParticipants = await Participant.find({ sessionId })
+          .select('_id name role')
+          .lean();
+
+        // Include server-side accumulated round summaries (with per-member votes)
+        const roundSummaries = sessionRoundSummaries.get(sessionId.toString()) || [];
+
+        const sessionSummary = {
+          sessionName: session.name,
+          stories: lockedStories.map((s) => ({
+            storyId: s._id,
+            externalId: s.externalId,
+            summary: s.summary,
+            finalValue: s.storyPoints,
+          })),
+          roundSummaries,
+          participants: allParticipants.map((p) => ({
+            name: p.name,
+            role: p.role,
+          })),
+        };
+
+        // Broadcast to room that session has ended, with summary data
         const roomCode = socket.data?.roomCode;
         if (roomCode) {
-          io.to(roomCode).emit('session-ended', { message: 'The host has ended the session.' });
+          io.to(roomCode).emit('session-ended', {
+            message: 'The host has ended the session.',
+            sessionSummary,
+          });
         }
 
         // Delete session and related data
         await Session.findByIdAndDelete(sessionId);
         await Participant.deleteMany({ sessionId });
         await Vote.deleteMany({ sessionId });
+        // Also delete stories for this session
+        await Story.deleteMany({ sessionId });
+
+        // Clean up in-memory round summaries
+        sessionRoundSummaries.delete(sessionId.toString());
 
         callback?.({ success: true });
 

@@ -1,11 +1,13 @@
 import React, { useState } from 'react'
+import SessionSummary from './SessionSummary'
 
-export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, stories = [], onSelectIssue }) {
+export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, stories = [], onSelectIssue, summaryRounds = [] }) {
   if (!issue && !isHost) return null // nothing to show if no issue and not a host
 
   const TABS = [
     { id: 'description', icon: 'description',  label: 'Description' },
     { id: 'criteria',    icon: 'fact_check',   label: 'Criteria' },
+    { id: 'summary',     icon: 'summarize',    label: 'Summary' },
   ]
 
   if (isHost) {
@@ -96,6 +98,7 @@ export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, st
       case 'queue': return renderQueue()
       case 'description': return renderDescription()
       case 'criteria': return renderCriteria()
+      case 'summary': return <SessionSummary summaryRounds={summaryRounds} />
       default: return renderDescription()
     }
   }
