@@ -179,7 +179,7 @@ const getIssueDetail = withJiraErrorHandling(async (req, res) => {
  */
 const writeStoryPoints = withJiraErrorHandling(async (req, res) => {
   const { issueKey } = req.params;
-  const { roomCode, storyPoints, customFieldId = 'customfield_10016' } = req.body;
+  const { roomCode, storyPoints, customFieldId } = req.body;
 
   if (!roomCode) {
     return res.status(400).json({ error: 'roomCode is required in the request body' });
@@ -201,15 +201,55 @@ const writeStoryPoints = withJiraErrorHandling(async (req, res) => {
     ? null
     : Number(storyPoints);
 
-  await jiraRequest(sessionId, 'PUT', `/issue/${issueKey}`, {
-    body: {
-      fields: {
-        [customFieldId]: fieldValue,
-      },
+  // 1. Auto-discover the exact custom field IDs for Story Points globally
+  let discoveredFieldIds = [];
+  try {
+    const fields = await jiraRequest(sessionId, 'GET', '/field');
+    for (const f of fields) {
+      const name = f.name?.toLowerCase() || '';
+      if (name === 'story points') {
+        discoveredFieldIds.unshift(f.id); // Highest priority: exact 'Story Points'
+      } else if (name === 'story point estimate') {
+        discoveredFieldIds.push(f.id); // Lower priority: 'Story point estimate'
+      }
     }
-  });
+  } catch (err) {
+    console.error('Failed to fetch Jira fields:', err.message);
+  }
 
-  // Jira's PUT /issue returns 204 with no body on success
+  // 2. Combine discovered fields with common fallbacks
+  // By putting discovered 'Story Points' first, we guarantee we try the user's specific custom field ID
+  // even if it is not 10028 or 10002.
+  const candidateFields = customFieldId && customFieldId !== 'customfield_10016'
+    ? [customFieldId]
+    : [...new Set([
+        ...discoveredFieldIds,
+        'customfield_10028', 'customfield_10002', 'customfield_10016', 'customfield_10004'
+      ])];
+
+  let success = false;
+  let lastError = null;
+
+  for (const fieldId of candidateFields) {
+    try {
+      await jiraRequest(sessionId, 'PUT', `/issue/${issueKey}`, {
+        body: {
+          fields: {
+            [fieldId]: fieldValue,
+          },
+        }
+      });
+      success = true;
+      break; // Stop on first successful update
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  if (!success) {
+    throw lastError || new Error('Could not find a valid Story Points field to update');
+  }
+
   return res.status(204).send();
 });
 
@@ -281,8 +321,8 @@ function shapeIssue(raw) {
     // comment labelled "Acceptance Criteria" — we extract the raw ADF for now
     // and let the frontend render it. A custom field approach can be added later.
     acceptanceCriteria: null, // TODO: map to your team's custom field if applicable
-    // customfield_10016 = story points (next-gen), customfield_10028 = story points (classic)
-    storyPoints: f.customfield_10016 ?? f.customfield_10028 ?? null,
+    // customfield_10028/10002 = story points (classic), customfield_10016 = story points (next-gen)
+    storyPoints: f.customfield_10028 ?? f.customfield_10002 ?? f.customfield_10016 ?? null,
   };
 }
 
@@ -300,7 +340,7 @@ function shapeIssueDetail(raw) {
     // comment labelled "Acceptance Criteria" — we extract the raw ADF for now
     // and let the frontend render it. A custom field approach can be added later.
     acceptanceCriteria: null, // TODO: map to your team's custom field if applicable
-    storyPoints: f.customfield_10016 ?? f.customfield_10028 ?? null,
+    storyPoints: f.customfield_10028 ?? f.customfield_10002 ?? f.customfield_10016 ?? null,
     status: f.status?.name ?? 'Unknown',
     type: f.issuetype?.name ?? 'Story',
     url: `https://your-domain.atlassian.net/browse/${raw.key}`, // updated by jiraRequest cloudId in Phase 2

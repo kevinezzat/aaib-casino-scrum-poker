@@ -176,7 +176,7 @@ export default function PokerTablePage() {
   }, [socket.lockedEstimation])
 
   // ── Handle dealer confirming lock-in ────────────────────────────
-  const handleConfirmLock = useCallback((finalValue) => {
+  const handleConfirmLock = useCallback(async (finalValue) => {
     if (!currentIssue || !sessionId) return
 
     // Find the next story in the list for auto-advance
@@ -190,7 +190,29 @@ export default function PokerTablePage() {
       finalValue,
       nextStory?._id ?? null
     )
-  }, [currentIssue, sessionId, stories, handlers])
+
+    if (currentIssue.externalId && currentIssue.externalId.includes('-')) {
+      try {
+        const response = await fetchApi(`/api/jira/issues/${currentIssue.externalId}/story-points`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            roomCode: code,
+            storyPoints: finalValue,
+          })
+        })
+        if (response.ok) {
+          setToast(`Updated Jira issue ${currentIssue.externalId}`)
+        } else if (response.status !== 401) {
+          const errData = await response.json().catch(() => ({}))
+          console.error('Jira update failed:', errData)
+          setToast(`Failed to update Jira: ${errData.error || 'Unknown error'}`)
+        }
+      } catch (err) {
+        console.error('Failed to write to Jira:', err)
+      }
+    }
+  }, [currentIssue, sessionId, stories, handlers, code])
 
   // Dealer name: prefer the live socket participant, fall back to local player name
   // so the host sees their name immediately before the round-trip completes.
