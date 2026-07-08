@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { sanitize } from '../utils/sanitize';
 
 export default function JiraIssueList({ issues, onImport, loading }) {
   const [selectedKeys, setSelectedKeys] = useState(new Set());
@@ -70,15 +71,15 @@ export default function JiraIssueList({ issues, onImport, loading }) {
                     onChange={() => handleToggleIssue(issue.key)}
                   />
                 </td>
-                <td className="p-3 font-body-sm text-on-surface whitespace-nowrap">{issue.key}</td>
-                <td className="p-3 font-body-sm text-on-surface">{issue.summary}</td>
+                <td className="p-3 font-body-sm text-on-surface whitespace-nowrap">{sanitize(issue.key)}</td>
+                <td className="p-3 font-body-sm text-on-surface">{sanitize(issue.summary)}</td>
                 <td className="p-3">
                   <span className="inline-block px-2 py-1 bg-surface-container-high border border-outline-variant rounded text-[11px] uppercase tracking-wider text-on-surface-variant">
-                    {issue.type}
+                    {sanitize(issue.type)}
                   </span>
                 </td>
-                <td className="p-3 font-body-sm text-on-surface">{issue.acceptanceCriteria}</td>
-                <td className="p-3 font-body-sm text-on-surface">{issue.description}</td>
+                <td className="p-3 font-body-sm text-on-surface">{sanitize(issue.acceptanceCriteria)}</td>
+                <td className="p-3 font-body-sm text-on-surface">{sanitize(issue.description)}</td>
                 <td className="p-3">
                   <span className="font-label-sm text-on-surface-variant">
                     {issue.storyPoints !== null ? issue.storyPoints : '-'}

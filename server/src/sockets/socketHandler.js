@@ -1,8 +1,93 @@
 'use strict';
 
+const mongoose = require('mongoose');
 const Session = require('../models/Session');
 const Participant = require('../models/Participant');
 const Vote = require('../models/Vote');
+const { sanitizeName } = require('../utils/sanitize');
+
+// ── Allowed vote values across all deck types ─────────────────────────────
+const VALID_VOTE_VALUES = new Set([
+  // Fibonacci
+  '0', '0.5', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89',
+  0, 0.5, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89,
+  // T-shirt
+  'XS', 'S', 'M', 'L', 'XL', 'XXL',
+  // Powers of 2
+  '1', '2', '4', '8', '16', '32', '64',
+  1, 2, 4, 8, 16, 32, 64,
+  // Special
+  '?', 'coffee',
+]);
+
+// ── Validation helper ───────────────────────────────────────────────────
+
+/**
+ * Validate that a value is a non-empty MongoDB ObjectId string.
+ */
+function isValidObjectId(val) {
+  return typeof val === 'string' && mongoose.isValidObjectId(val);
+}
+
+/**
+ * Simple schema-based socket payload validator.
+ * Returns { valid: true } or { valid: false, error: string }.
+ *
+ * @param {object} schema  — keys with { required?, type?, maxLength?, isObjectId?, isIn? }
+ * @param {object} payload — the raw socket event payload
+ */
+function validateSocketPayload(schema, payload) {
+  if (!payload || typeof payload !== 'object') {
+    return { valid: false, error: 'Payload must be an object' };
+  }
+  for (const [field, rules] of Object.entries(schema)) {
+    const val = payload[field];
+    const missing = val === undefined || val === null || val === '';
+
+    if (rules.required && missing) {
+      return { valid: false, error: `${field} is required` };
+    }
+    if (missing) continue; // optional field, skip further checks
+
+    if (rules.type && typeof val !== rules.type) {
+      return { valid: false, error: `${field} must be a ${rules.type}` };
+    }
+    if (rules.maxLength && typeof val === 'string' && val.length > rules.maxLength) {
+      return { valid: false, error: `${field} must be ${rules.maxLength} characters or fewer` };
+    }
+    if (rules.isObjectId && !isValidObjectId(String(val))) {
+      return { valid: false, error: `${field} must be a valid ID` };
+    }
+    if (rules.isIn && !rules.isIn.has(val)) {
+      return { valid: false, error: `${field} has an invalid value` };
+    }
+  }
+  return { valid: true };
+}
+
+// ── Per-socket place-chip rate limiter ────────────────────────────────
+// Tracks { count, windowStart } per socket ID. Allows 15 place-chip events per minute.
+const PLACE_CHIP_LIMIT = 15;
+const PLACE_CHIP_WINDOW_MS = 60 * 1000; // 1 minute
+const placeChipCounters = new Map(); // socketId → { count, windowStart }
+
+function checkPlaceChipRateLimit(socketId) {
+  const now = Date.now();
+  const entry = placeChipCounters.get(socketId);
+
+  if (!entry || now - entry.windowStart > PLACE_CHIP_WINDOW_MS) {
+    // New window
+    placeChipCounters.set(socketId, { count: 1, windowStart: now });
+    return true;
+  }
+
+  if (entry.count >= PLACE_CHIP_LIMIT) {
+    return false; // Rate limit exceeded
+  }
+
+  entry.count += 1;
+  return true;
+}
 
 // ── In-memory store for round summaries (per-session) ─────────────
 // Accumulates round-by-round vote snapshots so the session-ended event
@@ -76,10 +161,19 @@ function registerSocketEvents(io) {
     // ── join-session ──────────────────────────────────────────────
     socket.on('join-session', async (payload, callback) => {
       try {
-        const { roomCode, playerName, hostToken, role: requestedRole } = payload || {};
+        // ── Payload validation ──────────────────────────────────────
+        const v = validateSocketPayload({
+          roomCode:   { required: true, type: 'string', maxLength: 6 },
+          playerName: { required: true, type: 'string', maxLength: 40 },
+          hostToken:  { type: 'string', maxLength: 128 },
+          role:       { isIn: new Set(['voter', 'spectator', undefined]) },
+        }, payload);
+        if (!v.valid) return callback?.({ error: v.error });
 
-        if (!roomCode || !playerName) {
-          return callback?.({ error: 'roomCode and playerName are required' });
+        const { roomCode, playerName, hostToken, role: requestedRole } = payload;
+        const safeName = sanitizeName(playerName);
+        if (!safeName) {
+          return callback?.({ error: 'playerName contained only invalid characters' });
         }
 
         const session = await Session.findOne({
@@ -91,7 +185,13 @@ function registerSocketEvents(io) {
         }
 
         // Verify if this user is the host using the secure token
-        const isHost = Boolean(hostToken && session.hostToken === hostToken);
+        const hostTokenValid =
+          Boolean(hostToken) &&
+          session.hostToken === hostToken &&
+          session.hostTokenExpiresAt instanceof Date &&
+          session.hostTokenExpiresAt.getTime() > Date.now();
+
+        const isHost = hostTokenValid;
         // Hosts are always dealers; others may join as voter or spectator
         const role = isHost ? 'dealer' : (requestedRole === 'spectator' ? 'spectator' : 'voter');
 
@@ -99,7 +199,7 @@ function registerSocketEvents(io) {
         // This keeps their `_id` and any placed votes intact across refreshes.
         let participant = await Participant.findOne({
           sessionId: session._id,
-          name: playerName.trim(),
+          name: safeName,
         });
 
         if (participant) {
@@ -115,7 +215,7 @@ function registerSocketEvents(io) {
 
           participant = await Participant.create({
             sessionId: session._id,
-            name: playerName.trim(),
+            name: safeName,
             role,
             socketId: socket.id,
             color: pickColor(existingColors),
@@ -184,7 +284,7 @@ function registerSocketEvents(io) {
         });
 
         console.log(
-          `[socket] ${playerName} joined room ${roomCode} (${socket.id})`
+          `[socket] ${safeName} joined room ${roomCode} (${socket.id})`
         );
       } catch (err) {
         console.error('[socket] join-session error:', err.message);
@@ -195,11 +295,19 @@ function registerSocketEvents(io) {
     // ── place-chip ────────────────────────────────────────────────
     socket.on('place-chip', async (payload, callback) => {
       try {
-        const { sessionId, itemId = 'current', value } = payload || {};
-
-        if (!sessionId || value === undefined || value === null) {
-          return callback?.({ error: 'sessionId and value are required' });
+        // ── Rate limiting (15 per minute per socket) ───────────────────
+        if (!checkPlaceChipRateLimit(socket.id)) {
+          return callback?.({ error: 'Too many votes, please wait before placing another chip' });
         }
+
+        // ── Payload validation ──────────────────────────────────────
+        const v = validateSocketPayload({
+          sessionId: { required: true, isObjectId: true },
+          value:     { required: true, isIn: VALID_VOTE_VALUES },
+        }, payload);
+        if (!v.valid) return callback?.({ error: v.error });
+
+        const { sessionId, itemId = 'current', value } = payload;
 
         const participantId = socket.data?.participantId;
         if (!participantId) {
@@ -252,11 +360,12 @@ function registerSocketEvents(io) {
     // ── reveal-chips ──────────────────────────────────────────────
     socket.on('reveal-chips', async (payload, callback) => {
       try {
-        const { sessionId } = payload || {};
+        const v = validateSocketPayload({
+          sessionId: { required: true, isObjectId: true },
+        }, payload);
+        if (!v.valid) return callback?.({ error: v.error });
 
-        if (!sessionId) {
-          return callback?.({ error: 'sessionId is required' });
-        }
+        const { sessionId } = payload;
 
         const session = await Session.findById(sessionId);
         if (!session) {
@@ -314,11 +423,15 @@ function registerSocketEvents(io) {
     // ── lock-estimation ───────────────────────────────────────────
     socket.on('lock-estimation', async (payload, callback) => {
       try {
-        const { sessionId, storyId, finalValue, nextStoryId } = payload || {};
+        const v = validateSocketPayload({
+          sessionId:  { required: true, isObjectId: true },
+          storyId:    { required: true, isObjectId: true },
+          finalValue: { required: true, isIn: VALID_VOTE_VALUES },
+          nextStoryId: { isObjectId: true },
+        }, payload);
+        if (!v.valid) return callback?.({ error: v.error });
 
-        if (!sessionId || !storyId || finalValue === undefined || finalValue === null) {
-          return callback?.({ error: 'sessionId, storyId and finalValue are required' });
-        }
+        const { sessionId, storyId, finalValue, nextStoryId } = payload;
 
         const session = await Session.findById(sessionId);
         if (!session) {
@@ -429,11 +542,12 @@ function registerSocketEvents(io) {
     // ── new-round ─────────────────────────────────────────────────
     socket.on('new-round', async (payload, callback) => {
       try {
-        const { sessionId, itemId = 'current' } = payload || {};
+        const v = validateSocketPayload({
+          sessionId: { required: true, isObjectId: true },
+        }, payload);
+        if (!v.valid) return callback?.({ error: v.error });
 
-        if (!sessionId) {
-          return callback?.({ error: 'sessionId is required' });
-        }
+        const { sessionId, itemId = 'current' } = payload;
 
         const session = await Session.findById(sessionId);
         if (!session) {
@@ -475,10 +589,13 @@ function registerSocketEvents(io) {
     // ── select-issue ──────────────────────────────────────────────
     socket.on('select-issue', async (payload, callback) => {
       try {
-        const { sessionId, storyId } = payload || {};
-        if (!sessionId || !storyId) {
-          return callback?.({ error: 'sessionId and storyId are required' });
-        }
+        const v = validateSocketPayload({
+          sessionId: { required: true, isObjectId: true },
+          storyId:   { required: true, isObjectId: true },
+        }, payload);
+        if (!v.valid) return callback?.({ error: v.error });
+
+        const { sessionId, storyId } = payload;
         
         const session = await Session.findById(sessionId);
         if (!session) return callback?.({ error: 'Session not found' });
@@ -506,11 +623,12 @@ function registerSocketEvents(io) {
     // ── end-session ───────────────────────────────────────────────
     socket.on('end-session', async (payload, callback) => {
       try {
-        const { sessionId } = payload || {};
+        const v = validateSocketPayload({
+          sessionId: { required: true, isObjectId: true },
+        }, payload);
+        if (!v.valid) return callback?.({ error: v.error });
 
-        if (!sessionId) {
-          return callback?.({ error: 'sessionId is required' });
-        }
+        const { sessionId } = payload;
 
         const session = await Session.findById(sessionId);
         if (!session) {
@@ -582,6 +700,9 @@ function registerSocketEvents(io) {
 
     // ── disconnect ────────────────────────────────────────────────
     socket.on('disconnect', async () => {
+      // Clean up the per-socket rate limit counter
+      placeChipCounters.delete(socket.id);
+
       try {
         const { sessionId, participantId, roomCode } = socket.data || {};
 

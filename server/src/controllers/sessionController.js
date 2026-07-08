@@ -3,6 +3,7 @@
 const { customAlphabet } = require('nanoid');
 const Session = require('../models/Session');
 const Story = require('../models/Story');
+const { sanitizeText } = require('../utils/sanitize');
 
 // 6-char uppercase alphanumeric room code, e.g. "AB12CD"
 const generateRoomCode = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', 6);
@@ -32,25 +33,30 @@ async function createSession(req, res) {
   try {
     const { name, deckType } = req.body;
 
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return res.status(400).json({ error: 'name is required' });
+    // Sanitise the session name (express-validator already checked it exists and is a string)
+    const safeName = sanitizeText(name, 120);
+    if (!safeName) {
+      return res.status(400).json({ error: 'name contained only invalid characters' });
     }
 
     const roomCode = await uniqueRoomCode();
-    // Generate a secure token to identify the host
-    const hostToken = require('crypto').randomBytes(16).toString('hex');
+    // Generate a secure random host token
+    const hostToken = require('crypto').randomBytes(32).toString('hex');
 
     const session = await Session.create({
-      name: name.trim(),
+      name: safeName,
       roomCode,
       hostToken,
       deckType: deckType || 'fibonacci',
     });
 
+    // Option B: return hostToken once in the body. hostTokenExpiresAt is set
+    // automatically by the schema default (1 hour from now).
     return res.status(201).json({
       sessionId: session._id,
       roomCode: session.roomCode,
       hostToken: session.hostToken,
+      hostTokenExpiresAt: session.hostTokenExpiresAt,
     });
   } catch (err) {
     console.error('[POST /api/sessions]', err);
@@ -74,7 +80,9 @@ async function getSessionByCode(req, res) {
       return res.status(400).json({ error: 'Room code must be 6 characters' });
     }
 
-    const session = await Session.findOne({ roomCode: code }).select('-__v');
+    // Explicitly exclude hostToken and hostTokenExpiresAt — these are host-only secrets
+    // and must never be visible in the public session lookup response.
+    const session = await Session.findOne({ roomCode: code }).select('-__v -hostToken -hostTokenExpiresAt');
 
     if (!session) {
       return res.status(404).json({ error: 'Session not found' });
@@ -165,6 +173,9 @@ async function addStories(req, res) {
 
     const docs = stories.map((s, i) => ({
       ...s,
+      // Sanitise text fields before storing
+      summary: sanitizeText(s.summary || '', 500),
+      externalId: sanitizeText(s.externalId || '', 100),
       sessionId: id,
       order: startOrder + i,
     }));

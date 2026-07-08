@@ -27,6 +27,7 @@
 const Session = require('../models/Session');
 const { jiraRequest } = require('../services/jiraClient');
 const JiraReauthRequiredError = require('../errors/JiraReauthRequiredError');
+const { sanitizeText } = require('../utils/sanitize');
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
@@ -286,8 +287,14 @@ const postComment = withJiraErrorHandling(async (req, res) => {
     return res.status(404).json({ error: `No session found for room code: ${roomCode}` });
   }
 
+  // Sanitise the comment text before sending to Jira
+  const safeComment = sanitizeText(comment.trim(), 5000);
+  if (!safeComment) {
+    return res.status(400).json({ error: 'comment contained only invalid characters' });
+  }
+
   // Jira Cloud REST API v3 uses the Atlassian Document Format (ADF) for comment bodies
-  const adfComment = buildAdfComment(comment.trim());
+  const adfComment = buildAdfComment(safeComment);
 
   const data = await jiraRequest(sessionId, 'POST', `/issue/${issueKey}/comment`, {
     body: {

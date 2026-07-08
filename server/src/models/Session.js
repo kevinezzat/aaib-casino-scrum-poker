@@ -30,6 +30,10 @@ const sessionSchema = new mongoose.Schema(
       type: String, // Secret token given to the creator to prove they are the host
       required: true,
     },
+    hostTokenExpiresAt: {
+      type: Date, // Option B: short-lived token — creator must rejoin within 1 hour
+      default: () => new Date(Date.now() + 60 * 60 * 1000), // 1 hour from creation
+    },
     roomCode: {
       type: String,
       required: true,

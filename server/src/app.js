@@ -32,7 +32,26 @@ const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 // ── Security middleware (Helmet) ──────────────────────────────────
 app.use(
   helmet({
-    contentSecurityPolicy: NODE_ENV === 'production' ? undefined : false,
+    contentSecurityPolicy: NODE_ENV === 'production'
+      ? {
+          directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+            fontSrc: ["'self'", 'https://fonts.gstatic.com', 'https://fonts.googleapis.com'],
+            imgSrc: ["'self'", 'data:', 'https:'],
+            connectSrc: [
+              "'self'",
+              CLIENT_ORIGIN,
+              'https://api.atlassian.com',
+              'https://auth.atlassian.com',
+            ],
+            frameSrc: ["'none'"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: [],
+          },
+        }
+      : false,
     crossOriginEmbedderPolicy: false,
   })
 );
@@ -55,14 +74,28 @@ app.use(
   })
 );
 // ── Rate limiting ─────────────────────────────────────────────────
+// General API limiter: 100 requests per 15 minutes per IP
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per window
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests, please try again later.' },
 });
 app.use('/api/', apiLimiter);
+
+// Jira write-back limiter: 10 requests per 15 minutes per IP
+// Applied to mutation endpoints that call out to the Atlassian API on behalf of the user.
+const jiraWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many Jira write requests, please try again later.' },
+  skipFailedRequests: true, // don't penalise requests that failed validation
+});
+app.use('/api/jira/issues/:issueKey/story-points', jiraWriteLimiter);
+app.use('/api/jira/issues/:issueKey/comment', jiraWriteLimiter);
 
 // ── Cookie parser ─────────────────────────────────────────────────
 app.use(cookieParser());

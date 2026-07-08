@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import SessionSummary from './SessionSummary'
+import { sanitize } from '../../utils/sanitize'
 
 export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, stories = [], onSelectIssue, summaryRounds = [] }) {
   if (!issue && !isHost) return null // nothing to show if no issue and not a host
@@ -20,7 +21,7 @@ export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, st
   const renderDescription = () => (
     <>
       <p className="font-body-sm text-body-sm text-on-surface leading-relaxed mb-sm">
-        {issue?.description || 'No description provided.'}
+        {sanitize(issue?.description) || 'No description provided.'}
       </p>
       {issue?.acceptanceCriteria && (
         <>
@@ -28,7 +29,7 @@ export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, st
             Acceptance Criteria
           </h3>
           <p className="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
-            {issue.acceptanceCriteria.split('\n').map((line, i) => (
+            {sanitize(issue.acceptanceCriteria).split('\n').map((line, i) => (
               <span key={i}>
                 {line}
                 <br />
@@ -69,7 +70,7 @@ export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, st
               }`}
             >
               <div className="flex items-center justify-between gap-xs">
-                <div className="font-label-sm font-bold opacity-80 truncate">{story.externalId || story.key}</div>
+                <div className="font-label-sm font-bold opacity-80 truncate">{sanitize(story.externalId || story.key)}</div>
                 {isEstimated && (
                   <span
                     className="flex-shrink-0 flex items-center gap-[3px] bg-secondary/15 border border-secondary/40 rounded-full px-xs py-[1px]"
@@ -85,7 +86,7 @@ export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, st
                   </span>
                 )}
               </div>
-              <div className="font-body-sm truncate">{story.summary || story.title}</div>
+              <div className="font-body-sm truncate">{sanitize(story.summary || story.title)}</div>
             </button>
           )
         })}
@@ -116,10 +117,10 @@ export default function IssueSidebar({ issue, activeTab, onTabChange, isHost, st
           </div>
           <div>
             <h2 id="sidebar-title" className="font-headline-md text-[20px] text-primary m-0 font-bold truncate w-56">
-              {issue?.externalId || issue?.key || 'Issue Details'}
+              {sanitize(issue?.externalId || issue?.key || 'Issue Details')}
             </h2>
             <p className="font-body-sm text-body-sm text-on-surface-variant m-0 truncate w-56">
-              {issue?.summary || issue?.title || 'Select an issue'}
+              {sanitize(issue?.summary || issue?.title) || 'Select an issue'}
             </p>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchApi } from '../utils/api';
+import CustomSelect from './CustomSelect';
 
 export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
   const [projects, setProjects] = useState([]);
@@ -133,81 +134,54 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
 
       <div className="flex flex-col gap-lg">
         {/* Step 1: Project Dropdown */}
-        <div className="flex flex-col gap-xs animate-fade-in">
+        <div className="flex flex-col gap-xs animate-fade-in relative z-30">
           <label className="font-label-md text-on-surface-variant flex items-center gap-2">
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold">1</span>
             Project
           </label>
-          <div className="relative">
-            <select
-              className="w-full bg-surface border-outline-variant rounded-lg focus:border-primary focus:ring-primary font-body-md py-3 px-4 appearance-none disabled:opacity-50 transition-all"
-              value={selectedProject}
-              onChange={(e) => setSelectedProject(e.target.value)}
-              disabled={loading && projects.length === 0}
-            >
-              <option value="">-- Select Project --</option>
-              {projects.map(p => (
-                <option key={p.id} value={p.key}>{p.name}</option>
-              ))}
-            </select>
-            <span className="material-symbols-outlined absolute right-3 top-3 text-on-surface-variant pointer-events-none">
-              expand_more
-            </span>
-          </div>
+          <CustomSelect
+            options={projects.map(p => ({ value: p.key, label: p.name }))}
+            value={selectedProject}
+            onChange={(val) => setSelectedProject(val)}
+            placeholder="-- Select Project --"
+            disabled={loading && projects.length === 0}
+            loading={loading && projects.length === 0}
+          />
         </div>
 
         {/* Step 2: Board Dropdown (Only show if project is selected) */}
         {selectedProject && (
-          <div className="flex flex-col gap-xs animate-slide-up">
+          <div className="flex flex-col gap-xs animate-slide-up relative z-20">
             <label className="font-label-md text-on-surface-variant flex items-center gap-2">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold">2</span>
               Board
-              {loading && !boards.length && <span className="material-symbols-outlined animate-spin text-[16px] text-primary ml-2">sync</span>}
             </label>
-            <div className="relative">
-              <select
-                className="w-full bg-surface border-outline-variant rounded-lg focus:border-primary focus:ring-primary font-body-md py-3 px-4 appearance-none disabled:opacity-50 transition-all"
-                value={selectedBoard}
-                onChange={(e) => setSelectedBoard(e.target.value)}
-                disabled={loading || boards.length === 0}
-              >
-                <option value="">{boards.length === 0 && !loading ? 'No boards found' : '-- Select Board --'}</option>
-                {boards.map(b => (
-                  <option key={b.id} value={b.id}>{b.name}</option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-3 text-on-surface-variant pointer-events-none">
-                expand_more
-              </span>
-            </div>
+            <CustomSelect
+              options={boards.map(b => ({ value: b.id, label: b.name }))}
+              value={selectedBoard}
+              onChange={(val) => setSelectedBoard(val)}
+              placeholder={boards.length === 0 && !loading ? 'No boards found' : '-- Select Board --'}
+              disabled={loading || boards.length === 0}
+              loading={loading && !boards.length}
+            />
           </div>
         )}
 
         {/* Step 3: Sprint Dropdown (Only show if board is selected) */}
         {selectedBoard && (
-          <div className="flex flex-col gap-xs animate-slide-up">
+          <div className="flex flex-col gap-xs animate-slide-up relative z-10">
             <label className="font-label-md text-on-surface-variant flex items-center gap-2">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold">3</span>
               Sprint / Backlog
-              {loading && !sprints.length && <span className="material-symbols-outlined animate-spin text-[16px] text-primary ml-2">sync</span>}
             </label>
-            <div className="relative">
-              <select
-                className="w-full bg-surface border-outline-variant rounded-lg focus:border-primary focus:ring-primary font-body-md py-3 px-4 appearance-none disabled:opacity-50 transition-all"
-                value={selectedSprint}
-                onChange={(e) => setSelectedSprint(e.target.value)}
-                disabled={loading || (!sprints.length && loading)}
-              >
-                <option value="">-- Select Option --</option>
-                <option value="backlog">Entire Backlog (Unresolved)</option>
-                {sprints.map(s => (
-                  <option key={s.id} value={s.id}>{s.name} ({s.state})</option>
-                ))}
-              </select>
-              <span className="material-symbols-outlined absolute right-3 top-3 text-on-surface-variant pointer-events-none">
-                expand_more
-              </span>
-            </div>
+            <CustomSelect
+              options={sprints.map(s => ({ value: s.id, label: s.name }))}
+              value={selectedSprint}
+              onChange={(val) => setSelectedSprint(val)}
+              placeholder={sprints.length === 0 && !loading ? 'No sprints/backlogs found' : '-- Select Sprint / Backlog --'}
+              disabled={loading || (!sprints.length && loading)}
+              loading={loading && !sprints.length}
+            />
           </div>
         )}
       </div>
