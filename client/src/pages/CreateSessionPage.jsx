@@ -13,7 +13,7 @@ export default function CreateSessionPage() {
   const navigate = useNavigate()
   const { code: urlCode } = useParams()
   const { connected } = useJiraConnection(urlCode)
-  
+
   const [formData, setFormData] = useState({
     hostName: '',
     sessionName: '',
@@ -107,7 +107,7 @@ export default function CreateSessionPage() {
       })
 
       if (!importRes.ok) throw new Error('Failed to import stories')
-      
+
       navigate(`/session/${urlCode}`)
     } catch (err) {
       setError(err.message)
@@ -147,14 +147,14 @@ export default function CreateSessionPage() {
           const worksheet = workbook.Sheets[sheetName]
           const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
           if (json.length < 2) throw new Error('Spreadsheet is empty or has no data rows.')
-          
+
           const headers = json[0]
           const rows = json.slice(1).map(row => {
             let obj = {}
             headers.forEach((h, i) => obj[h] = row[i])
             return obj
           })
-          
+
           setCsvData({ headers, rows })
         } catch (err) {
           setError('Error parsing Excel file: ' + err.message)
@@ -164,7 +164,7 @@ export default function CreateSessionPage() {
     } else {
       setError('Unsupported file type. Please upload a .csv or .xlsx file.')
     }
-    
+
     // reset input
     e.target.value = null
   }
@@ -172,15 +172,15 @@ export default function CreateSessionPage() {
   const renderJumpstartOption = () => (
     <div className="mt-sm">
       <div className="relative flex items-center py-4">
-        <div className="flex-grow border-t border-outline-variant"></div>
+        <div className="flex-grow border-t border-surface-variant"></div>
         <span className="flex-shrink-0 mx-4 text-on-surface-variant font-label-sm">OR</span>
-        <div className="flex-grow border-t border-outline-variant"></div>
+        <div className="flex-grow border-t border-surface-variant"></div>
       </div>
 
       <button
         onClick={handleStartBlankSession}
         disabled={loading || importing}
-        className="w-full bg-transparent border-2 border-primary text-primary hover:bg-primary/10 font-label-md py-sm rounded-lg uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-xs"
+        className="w-full bg-transparent border-2 border-surface-variant text-on-surface-variant hover:border-secondary hover:text-secondary font-label-md py-sm rounded-xl uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-xs"
       >
         {loading || importing ? (
           <span className="material-symbols-outlined animate-spin text-[20px]">sync</span>
@@ -202,176 +202,192 @@ export default function CreateSessionPage() {
   }
 
   return (
-    <div className="bg-surface-container-lowest text-on-surface min-h-screen flex items-center justify-center p-md">
-      <div className="max-w-xl w-full bg-surface-container border border-outline-variant rounded-2xl p-lg shadow-xl animate-fade-in relative overflow-hidden">
-        {/* Subtle background decoration */}
-        <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-secondary/10 rounded-full blur-3xl pointer-events-none" />
+    <div className="bg-surface-container-lowest text-on-surface h-screen relative flex overflow-hidden">
 
-        <div className="relative z-10 flex flex-col items-center mb-lg">
-          <div className="w-16 h-16 bg-primary-container rounded-2xl flex items-center justify-center mb-sm shadow-md">
-            <span className="material-symbols-outlined text-on-primary-container text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-              casino
-            </span>
-          </div>
-          <h1 className="font-headline-lg text-primary mb-xs text-center">New Session</h1>
-          <p className="font-body-sm text-on-surface-variant text-center">
-            {stepTitles[currentStep]}
-          </p>
+      {/* Left Area: Pool/Table Mock */}
+      <div className="absolute top-0 left-0 w-full lg:w-[60%] h-full flex items-center justify-center pointer-events-none z-0">
+        <div className="relative w-full h-full flex flex-col items-center justify-end overflow-hidden">
+          {/* Abstract pool/poker table shape */}
+          <div className="absolute w-[140%] h-[50%] -bottom-[10%] bg-secondary/10 rounded-[100%] shadow-[inset_0_0_80px_rgba(0,108,73,0.2)] transform -rotate-6 scale-x-125 border-[24px] border-secondary/5"></div>
+          {/* Dealer Image */}
+          <img src="/croupier.svg" alt="Dealer" className="relative z-10 w-[60%] max-w-[450px] object-contain drop-shadow-2xl translate-x-[-15%]" />
         </div>
+      </div>
 
-        {error && (
-          <div className="bg-error-container text-on-error-container p-sm rounded-lg mb-md font-body-sm border border-error/20 flex items-center gap-xs relative z-10">
-            <span className="material-symbols-outlined text-[20px]">error</span>
-            {error}
+      {/* Right Area: Form */}
+      <div className="relative z-10 w-full lg:w-[45%] ml-auto flex flex-col h-screen overflow-y-auto px-md py-4 lg:px-xl lg:py-md bg-surface-container-lowest/90 backdrop-blur-xl shadow-[-20px_0_40px_rgba(0,0,0,0.05)] border-l border-surface-container-high animate-fade-in">
+        
+        <div className="max-w-md w-full mx-auto relative my-auto">
+          <div className="flex flex-col items-start mb-lg">
+            <div className="w-14 h-14 bg-secondary/10 rounded-2xl flex items-center justify-center mb-md shadow-sm border border-secondary/20">
+              <span className="material-symbols-outlined text-secondary text-[28px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                casino
+              </span>
+            </div>
+            <h1 className="font-headline-lg text-on-surface mb-xs">New Session</h1>
+            <p className="font-body-sm text-on-surface-variant">
+              {stepTitles[currentStep]}
+            </p>
           </div>
-        )}
 
-        <div className="relative z-10">
-          {currentStep === 1 && (
-            <form onSubmit={handleCreateSession} className="flex flex-col gap-md animate-fade-in">
-              <div className="flex flex-col gap-xs">
-                <label htmlFor="hostName" className="font-label-md text-on-surface-variant">Your Name</label>
-                <input
-                  id="hostName"
-                  type="text"
-                  required
-                  maxLength={60}
-                  placeholder="e.g. Scrum Master Alex"
-                  className="bg-surface-container-highest border-outline-variant rounded-lg focus:border-primary focus:ring-primary font-body-md"
-                  value={formData.hostName}
-                  onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
-                />
-              </div>
-
-              <div className="flex flex-col gap-xs">
-                <label htmlFor="sessionName" className="font-label-md text-on-surface-variant">Session Name / Topic</label>
-                <input
-                  id="sessionName"
-                  type="text"
-                  required
-                  maxLength={120}
-                  placeholder="e.g. Sprint 14 Planning"
-                  className="bg-surface-container-highest border-outline-variant rounded-lg focus:border-primary focus:ring-primary font-body-md"
-                  value={formData.sessionName}
-                  onChange={(e) => setFormData({ ...formData, sessionName: e.target.value })}
-                />
-              </div>
-
-              <div className="flex flex-col gap-xs mb-sm">
-                <label htmlFor="deckType" className="font-label-md text-on-surface-variant">Deck Type</label>
-                <select
-                  id="deckType"
-                  className="bg-surface-container-highest border-outline-variant rounded-lg focus:border-primary focus:ring-primary font-body-md"
-                  value={formData.deckType}
-                  onChange={(e) => setFormData({ ...formData, deckType: e.target.value })}
-                >
-                  <option value="fibonacci">Fibonacci (1, 2, 3, 5, 8, 13, 20)</option>
-                  <option value="tshirt">T-Shirt (XS, S, M, L, XL)</option>
-                  <option value="powers-of-2">Powers of 2 (1, 2, 4, 8, 16)</option>
-                </select>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!formData.hostName.trim() || !formData.sessionName.trim() || loading}
-                className="w-full bg-primary hover:bg-surface-tint text-on-primary font-label-md py-sm rounded-lg uppercase tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-xs"
-              >
-                {loading ? 'Creating...' : 'Next Step'}
-                <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
-              </button>
-            </form>
+          {error && (
+            <div className="bg-error-container text-on-error-container p-sm rounded-lg mb-md font-body-sm flex items-center gap-xs relative z-10">
+              <span className="material-symbols-outlined text-[20px]">error</span>
+              {error}
+            </div>
           )}
 
-          {currentStep === 2 && (
-            <div className="flex flex-col gap-md animate-fade-in">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
-                
-                {/* Jira Card */}
-                <div className="bg-surface-container-highest border border-outline-variant rounded-xl p-md flex flex-col items-center justify-center text-center gap-sm hover:border-primary/50 transition-colors">
-                  <span className="material-symbols-outlined text-[32px] text-primary">api</span>
-                  <div>
-                    <h3 className="font-label-lg text-on-surface">Import from Jira</h3>
-                    <p className="font-body-sm text-on-surface-variant mt-1 mb-3 text-balance">
-                      Connect to your Atlassian workspace to pull stories directly from a backlog or sprint.
-                    </p>
-                  </div>
-                  <JiraConnectButton roomCode={urlCode} />
+          <div className="relative z-10">
+            {currentStep === 1 && (
+              <form onSubmit={handleCreateSession} className="flex flex-col gap-md animate-fade-in">
+                <div className="flex flex-col gap-xs">
+                  <label htmlFor="hostName" className="font-label-sm text-on-surface-variant uppercase tracking-wider ml-2">Your Name</label>
+                  <input
+                    id="hostName"
+                    type="text"
+                    required
+                    maxLength={60}
+                    placeholder="e.g. Scrum Master Alex"
+                    className="w-full bg-surface-container-lowest border-2 border-surface-variant/50 focus:border-secondary focus:ring-4 focus:ring-secondary/20 rounded-2xl px-4 py-3 font-body-lg transition-all shadow-sm outline-none"
+                    value={formData.hostName}
+                    onChange={(e) => setFormData({ ...formData, hostName: e.target.value })}
+                  />
                 </div>
 
-                {/* File Upload Card */}
-                <label className="bg-surface-container-highest border border-outline-variant rounded-xl p-md flex flex-col items-center justify-center text-center gap-sm hover:border-secondary/50 transition-colors cursor-pointer group">
-                  <input 
-                    type="file" 
-                    accept=".csv, .xlsx, .xls"
-                    className="hidden" 
-                    onChange={handleFileUpload} 
+                <div className="flex flex-col gap-xs mt-sm">
+                  <label htmlFor="sessionName" className="font-label-sm text-on-surface-variant uppercase tracking-wider ml-2">Session Name / Topic</label>
+                  <input
+                    id="sessionName"
+                    type="text"
+                    required
+                    maxLength={120}
+                    placeholder="e.g. Sprint 14 Planning"
+                    className="w-full bg-surface-container-lowest border-2 border-surface-variant/50 focus:border-secondary focus:ring-4 focus:ring-secondary/20 rounded-2xl px-4 py-3 font-body-lg transition-all shadow-sm outline-none"
+                    value={formData.sessionName}
+                    onChange={(e) => setFormData({ ...formData, sessionName: e.target.value })}
                   />
-                  <span className="material-symbols-outlined text-[32px] text-secondary group-hover:scale-110 transition-transform">upload_file</span>
-                  <div>
-                    <h3 className="font-label-lg text-on-surface">Upload CSV / Excel</h3>
-                    <p className="font-body-sm text-on-surface-variant mt-1 mb-3 text-balance">
-                      Import stories from a spreadsheet file.
-                    </p>
+                </div>
+
+                <div className="flex flex-col gap-xs mt-sm mb-lg">
+                  <label htmlFor="deckType" className="font-label-sm text-on-surface-variant uppercase tracking-wider ml-2">Deck Type</label>
+                  <div className="relative">
+                    <select
+                      id="deckType"
+                      className="w-full bg-surface-container-lowest border-2 border-surface-variant/50 focus:border-secondary focus:ring-4 focus:ring-secondary/20 rounded-2xl px-4 py-3 font-body-lg transition-all shadow-sm cursor-pointer appearance-none outline-none"
+                      value={formData.deckType}
+                      onChange={(e) => setFormData({ ...formData, deckType: e.target.value })}
+                    >
+                      <option value="fibonacci">Fibonacci (1, 2, 3, 5, 8, 13, 20)</option>
+                      <option value="tshirt">T-Shirt (XS, S, M, L, XL)</option>
+                      <option value="powers-of-2">Powers of 2 (1, 2, 4, 8, 16)</option>
+                    </select>
+
                   </div>
-                  <span className="bg-surface-container-highest border border-secondary px-3 py-1 rounded font-label-sm text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
-                    Select File
-                  </span>
-                </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={!formData.hostName.trim() || !formData.sessionName.trim() || loading}
+                  className="w-full bg-secondary hover:bg-secondary/90 text-on-secondary font-label-md py-4 rounded-xl uppercase tracking-wider transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-sm shadow-md hover:shadow-lg"
+                >
+                  {loading ? 'Creating...' : 'Next Step'}
+                  <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                </button>
+              </form>
+            )}
+
+            {currentStep === 2 && (
+              <div className="flex flex-col gap-md animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-sm">
+
+                  {/* Jira Card */}
+                  <div className="bg-surface-container-lowest border border-surface-variant rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-xs hover:border-secondary/50 transition-colors shadow-sm hover:shadow-md">
+                    <span className="material-symbols-outlined text-[28px] text-secondary">api</span>
+                    <div>
+                      <h3 className="font-label-md text-on-surface">Import from Jira</h3>
+                      <p className="font-body-sm text-on-surface-variant mt-1 mb-2 text-balance leading-snug">
+                        Connect to your Atlassian workspace to pull stories directly from a backlog or sprint.
+                      </p>
+                    </div>
+                    <div className="mt-1">
+                      <JiraConnectButton roomCode={urlCode} />
+                    </div>
+                  </div>
+
+                  {/* File Upload Card */}
+                  <label className="bg-surface-container-lowest border border-surface-variant rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-xs hover:border-secondary/50 transition-colors shadow-sm hover:shadow-md cursor-pointer group">
+                    <input
+                      type="file"
+                      accept=".csv, .xlsx, .xls"
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                    <span className="material-symbols-outlined text-[28px] text-secondary group-hover:scale-110 transition-transform">upload_file</span>
+                    <div>
+                      <h3 className="font-label-md text-on-surface">Upload CSV / Excel</h3>
+                      <p className="font-body-sm text-on-surface-variant mt-1 mb-2 text-balance leading-snug">
+                        Import stories from a spreadsheet file.
+                      </p>
+                    </div>
+                    <span className="bg-secondary/10 border border-secondary/20 px-4 py-1.5 mt-1 rounded-lg font-label-sm text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
+                      Select File
+                    </span>
+                  </label>
+                </div>
+
+                {renderJumpstartOption()}
+
+                <button
+                  onClick={() => navigate('/create')}
+                  className="mx-auto mt-0 text-on-surface-variant hover:text-on-surface font-label-sm flex items-center gap-1 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                  Create new session
+                </button>
               </div>
+            )}
 
-              {renderJumpstartOption()}
+            {currentStep === 3 && (
+              <div className="flex flex-col gap-md animate-fade-in">
+                <JiraStorySelector
+                  roomCode={urlCode}
+                  onIssuesFetched={setFetchedIssues}
+                />
 
-              <button
-                onClick={() => navigate('/create')}
-                className="mx-auto mt-2 text-on-surface-variant hover:text-on-surface font-label-sm flex items-center gap-1 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                Create new session
-              </button>
-            </div>
-          )}
+                {renderJumpstartOption()}
+              </div>
+            )}
 
-          {currentStep === 3 && (
-            <div className="flex flex-col gap-md animate-fade-in">
-              <JiraStorySelector 
-                roomCode={urlCode} 
-                onIssuesFetched={setFetchedIssues} 
-              />
-              
-              {renderJumpstartOption()}
-            </div>
-          )}
+            {currentStep === 4 && (
+              <div className="flex flex-col gap-md animate-fade-in">
+                <JiraIssueList
+                  issues={fetchedIssues}
+                  loading={importing}
+                  onImport={handleImportStories}
+                />
+                <button
+                  onClick={() => setFetchedIssues(null)}
+                  className="mx-auto mt-2 text-on-surface-variant hover:text-on-surface font-label-sm flex items-center gap-1 transition-colors disabled:opacity-50"
+                  disabled={importing}
+                >
+                  <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                  Change Filter
+                </button>
+              </div>
+            )}
 
-          {currentStep === 4 && (
-            <div className="flex flex-col gap-md animate-fade-in">
-              <JiraIssueList 
-                issues={fetchedIssues} 
-                loading={importing} 
-                onImport={handleImportStories} 
-              />
-              <button
-                onClick={() => setFetchedIssues(null)}
-                className="mx-auto mt-2 text-on-surface-variant hover:text-on-surface font-label-sm flex items-center gap-1 transition-colors disabled:opacity-50"
-                disabled={importing}
-              >
-                <span className="material-symbols-outlined text-[16px]">arrow_back</span>
-                Change Filter
-              </button>
-            </div>
-          )}
-
-          {currentStep === 5 && (
-            <div className="flex flex-col gap-md animate-fade-in w-full max-w-[800px] mx-auto">
-              <CsvMappingUI
-                headers={csvData.headers}
-                rows={csvData.rows}
-                loading={importing}
-                onImport={handleImportStories}
-                onCancel={() => setCsvData(null)}
-              />
-            </div>
-          )}
+            {currentStep === 5 && (
+              <div className="flex flex-col gap-md animate-fade-in w-full">
+                <CsvMappingUI
+                  headers={csvData.headers}
+                  rows={csvData.rows}
+                  loading={importing}
+                  onImport={handleImportStories}
+                  onCancel={() => setCsvData(null)}
+                />
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
