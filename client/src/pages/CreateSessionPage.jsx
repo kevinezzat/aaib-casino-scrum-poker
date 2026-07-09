@@ -202,7 +202,7 @@ export default function CreateSessionPage() {
   }
 
   return (
-    <div className="bg-surface-container-lowest text-on-surface h-screen relative flex overflow-hidden">
+    <main className="bg-surface-container-lowest text-on-surface h-screen relative flex overflow-hidden">
 
       {/* Left Area: Pool/Table Mock */}
       <div className="absolute top-0 left-0 w-full lg:w-[60%] h-full flex items-center justify-center pointer-events-none z-0">
@@ -210,7 +210,7 @@ export default function CreateSessionPage() {
           {/* Abstract pool/poker table shape */}
           <div className="absolute w-[140%] h-[50%] -bottom-[10%] bg-secondary/10 rounded-[100%] shadow-[inset_0_0_80px_rgba(0,108,73,0.2)] transform -rotate-6 scale-x-125 border-[24px] border-secondary/5"></div>
           {/* Dealer Image */}
-          <img src="/croupier.svg" alt="Dealer" className="relative z-10 w-[60%] max-w-[450px] object-contain drop-shadow-2xl translate-x-[-15%]" />
+          <img src="/croupier.svg" alt="Dealer" width="450" height="450" className="relative z-10 w-[60%] max-w-[450px] object-contain drop-shadow-2xl translate-x-[-15%]" />
         </div>
       </div>
 
@@ -224,7 +224,7 @@ export default function CreateSessionPage() {
                 casino
               </span>
             </div>
-            <h1 className="font-headline-lg text-on-surface mb-xs">New Session</h1>
+            <h1 className="text-4xl md:text-5xl font-extrabold text-on-surface mb-2 tracking-tight">New Session</h1>
             <p className="font-body-sm text-on-surface-variant">
               {stepTitles[currentStep]}
             </p>
@@ -304,7 +304,7 @@ export default function CreateSessionPage() {
                   <div className="bg-surface-container-lowest border border-surface-variant rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-xs hover:border-secondary/50 transition-colors shadow-sm hover:shadow-md">
                     <span className="material-symbols-outlined text-[28px] text-secondary">api</span>
                     <div>
-                      <h3 className="font-label-md text-on-surface">Import from Jira</h3>
+                      <h2 className="font-label-md text-on-surface">Import from Jira</h2>
                       <p className="font-body-sm text-on-surface-variant mt-1 mb-2 text-balance leading-snug">
                         Connect to your Atlassian workspace to pull stories directly from a backlog or sprint.
                       </p>
@@ -324,7 +324,7 @@ export default function CreateSessionPage() {
                     />
                     <span className="material-symbols-outlined text-[28px] text-secondary group-hover:scale-110 transition-transform">upload_file</span>
                     <div>
-                      <h3 className="font-label-md text-on-surface">Upload CSV / Excel</h3>
+                      <h2 className="font-label-md text-on-surface">Upload CSV / Excel</h2>
                       <p className="font-body-sm text-on-surface-variant mt-1 mb-2 text-balance leading-snug">
                         Import stories from a spreadsheet file.
                       </p>
@@ -390,6 +390,6 @@ export default function CreateSessionPage() {
           </div>
         </div>
       </div>
-    </div>
+    </main>
   )
 }

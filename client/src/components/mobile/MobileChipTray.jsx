@@ -107,11 +107,11 @@ export default function MobileChipTray({
                       onClick={() => onChipSelect(chip.value)}
                     >
                       {chip.icon ? (
-                        <span className={`material-symbols-outlined text-3xl z-10 pointer-events-none ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
+                        <span className={`material-symbols-outlined text-3xl z-10 pointer-events-none text-on-surface`}>
                           {chip.icon}
                         </span>
                       ) : (
-                        <span className={`font-headline-xl text-headline-xl z-10 pointer-events-none ${isSelected ? 'text-primary' : 'text-on-surface'}`}>
+                        <span className={`font-headline-xl text-headline-xl z-10 pointer-events-none text-on-surface`}>
                           {chip.label}
                         </span>
                       )}
@@ -125,7 +125,7 @@ export default function MobileChipTray({
             <div className="mt-auto pt-sm w-full">
               <button
                 id="btn-place-chip"
-                className={`place-chip-btn w-full text-white font-label-md text-label-md py-4 rounded-xl flex items-center justify-center gap-2 font-bold tracking-wide uppercase transition-all ${chipPlaced ? 'bg-secondary' : 'bg-[#ef4444]'
+                className={`place-chip-btn w-full text-white font-label-md text-label-md py-4 rounded-xl flex items-center justify-center gap-2 font-bold tracking-wide uppercase transition-all ${chipPlaced ? 'bg-secondary' : 'bg-secondary/90'
                   }`}
                 style={{ opacity: selectedChip ? 1 : 0.5 }}
                 disabled={!selectedChip}

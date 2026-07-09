@@ -106,8 +106,8 @@
 }
 
 @keyframes reveal-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(218, 52, 55, 0.4); }
-  50% { box-shadow: 0 0 20px 4px rgba(218, 52, 55, 0.3); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 108, 73, 0.4); }
+  50% { box-shadow: 0 0 20px 4px rgba(0, 108, 73, 0.3); }
 }
 
 @keyframes chip-pop {
@@ -217,11 +217,11 @@
 .reveal-btn:hover::before { width: 300px; height: 300px; }
 .reveal-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(218, 52, 55, 0.35);
+  box-shadow: 0 4px 16px rgba(0, 108, 73, 0.35);
 }
 .reveal-btn:active {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(218, 52, 55, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 108, 73, 0.25);
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -256,7 +256,7 @@
   position: absolute;
   bottom: 0; left: 50%;
   width: 0; height: 2px;
-  background: #b61722; /* primary */
+  background: #006c49; /* primary */
   transition: all 0.2s ease;
   transform: translateX(-50%);
 }
@@ -340,21 +340,21 @@
   transition: all 0.25s ease;
 }
 .estimate-chip:hover {
-  border-color: #b61722;
+  border-color: #006c49;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(182, 23, 34, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 108, 73, 0.12);
 }
-.estimate-chip:hover::before { border-color: #b61722; }
+.estimate-chip:hover::before { border-color: #006c49; }
 .estimate-chip:active { transform: scale(0.95); }
 
 .estimate-chip.selected {
-  border-color: #b61722;
-  background: #ffdad7;
+  border-color: #006c49;
+  background: rgba(0, 108, 73, 0.15);
   animation: chip-select-bounce 0.4s ease-out forwards;
-  box-shadow: 0 4px 16px rgba(182, 23, 34, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 108, 73, 0.2);
 }
 .estimate-chip.selected::before {
-  border-color: #b61722;
+  border-color: #006c49;
   border-style: solid;
 }
 
@@ -398,7 +398,7 @@
 .place-chip-btn:hover::before { width: 400px; height: 400px; }
 .place-chip-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 108, 73, 0.35);
 }
 .place-chip-btn:active { transform: translateY(0); }
 .place-chip-btn.placed { background: #006c49 !important; }
