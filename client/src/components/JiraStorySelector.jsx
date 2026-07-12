@@ -134,7 +134,7 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
 
       <div className="flex flex-col gap-lg">
         {/* Step 1: Project Dropdown */}
-        <div className="flex flex-col gap-xs animate-fade-in relative z-30">
+        <div className="flex flex-col gap-xs animate-fade-in" style={{ zIndex: 30, position: 'relative' }}>
           <label className="font-label-md text-on-surface-variant flex items-center gap-2">
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold">1</span>
             Project
@@ -151,7 +151,7 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
 
         {/* Step 2: Board Dropdown (Only show if project is selected) */}
         {selectedProject && (
-          <div className="flex flex-col gap-xs animate-slide-up relative z-20">
+          <div className="flex flex-col gap-xs animate-slide-up" style={{ zIndex: 20, position: 'relative' }}>
             <label className="font-label-md text-on-surface-variant flex items-center gap-2">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold">2</span>
               Board
@@ -169,7 +169,7 @@ export default function JiraStorySelector({ roomCode, onIssuesFetched }) {
 
         {/* Step 3: Sprint Dropdown (Only show if board is selected) */}
         {selectedBoard && (
-          <div className="flex flex-col gap-xs animate-slide-up relative z-10">
+          <div className="flex flex-col gap-xs animate-slide-up" style={{ zIndex: 10, position: 'relative' }}>
             <label className="font-label-md text-on-surface-variant flex items-center gap-2">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold">3</span>
               Sprint / Backlog

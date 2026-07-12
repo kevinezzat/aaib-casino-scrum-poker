@@ -12,7 +12,7 @@ import * as XLSX from 'xlsx'
 export default function CreateSessionPage() {
   const navigate = useNavigate()
   const { code: urlCode } = useParams()
-  const { connected } = useJiraConnection(urlCode)
+  const { connected, disconnect } = useJiraConnection(urlCode)
 
   const [formData, setFormData] = useState({
     hostName: '',
@@ -329,7 +329,7 @@ export default function CreateSessionPage() {
                         Import stories from a spreadsheet file.
                       </p>
                     </div>
-                    <span className="bg-secondary/10 border border-secondary/20 px-4 py-1.5 mt-1 rounded-lg font-label-sm text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
+                    <span className="bg-secondary/10 border border-secondary/20 px-4 py-2 mt-1 rounded-lg font-label-sm text-secondary group-hover:bg-secondary group-hover:text-on-secondary transition-colors">
                       Select File
                     </span>
                   </label>
@@ -349,12 +349,22 @@ export default function CreateSessionPage() {
 
             {currentStep === 3 && (
               <div className="flex flex-col gap-md animate-fade-in">
-                <JiraStorySelector
-                  roomCode={urlCode}
-                  onIssuesFetched={setFetchedIssues}
-                />
+                <div style={{ position: 'relative', zIndex: 10 }}>
+                  <JiraStorySelector
+                    roomCode={urlCode}
+                    onIssuesFetched={setFetchedIssues}
+                  />
+                </div>
 
                 {renderJumpstartOption()}
+
+                <button
+                  onClick={disconnect}
+                  className="mx-auto mt-2 text-on-surface-variant hover:text-on-surface font-label-sm flex items-center gap-1 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px]">arrow_back</span>
+                  Switch to Excel instead
+                </button>
               </div>
             )}
 
@@ -372,6 +382,14 @@ export default function CreateSessionPage() {
                 >
                   <span className="material-symbols-outlined text-[16px]">arrow_back</span>
                   Change Filter
+                </button>
+                <button
+                  onClick={() => { setFetchedIssues(null); disconnect() }}
+                  className="mx-auto text-on-surface-variant hover:text-on-surface font-label-sm flex items-center gap-1 transition-colors disabled:opacity-50"
+                  disabled={importing}
+                >
+                  <span className="material-symbols-outlined text-[16px]">swap_horiz</span>
+                  Switch to Excel instead
                 </button>
               </div>
             )}

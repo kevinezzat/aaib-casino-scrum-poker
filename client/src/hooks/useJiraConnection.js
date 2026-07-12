@@ -50,5 +50,12 @@ export function useJiraConnection(roomCode) {
     window.location.href = `${API_URL}/api/jira/auth/connect?roomCode=${roomCode}`
   }
 
-  return { connected, loading, cloudId, connect, refetch: checkStatus }
+  // Locally resets connected state so the user can go back to the import method picker
+  // without clearing the server-side token.
+  const disconnect = () => {
+    setConnected(false)
+    setCloudId(null)
+  }
+
+  return { connected, loading, cloudId, connect, disconnect, refetch: checkStatus }
 }
