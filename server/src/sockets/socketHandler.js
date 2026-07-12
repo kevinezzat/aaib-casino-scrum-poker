@@ -8,9 +8,9 @@ const { sanitizeName } = require('../utils/sanitize');
 
 // ── Allowed vote values across all deck types ─────────────────────────────
 const VALID_VOTE_VALUES = new Set([
-  // Fibonacci
-  '0', '0.5', '1', '2', '3', '5', '8', '13', '21', '34', '55', '89',
-  0, 0.5, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89,
+  // Fibonacci (client deck: 1, 2, 3, 5, 8, 13, 20, 40)
+  '0', '0.5', '1', '2', '3', '5', '8', '13', '20', '21', '34', '40', '55', '89',
+  0, 0.5, 1, 2, 3, 5, 8, 13, 20, 21, 34, 40, 55, 89,
   // T-shirt
   'XS', 'S', 'M', 'L', 'XL', 'XXL',
   // Powers of 2

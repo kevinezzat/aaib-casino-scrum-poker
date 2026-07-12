@@ -110,8 +110,6 @@ export function MobileStatusPanel({ issue, players, isActive }) {
 
 /** Mobile: team member list panel */
 export function MobileTeamPanel({ players, isActive }) {
-  const roles = ['Developer', 'QA Engineer', 'Designer', 'Backend Dev', 'Product Owner']
-
   return (
     <div
       id="mobile-team-panel"
@@ -126,21 +124,26 @@ export function MobileTeamPanel({ players, isActive }) {
             </span>
           </div>
           <div className="flex flex-col gap-sm">
-            {players.map((player, i) => (
-              <div key={player.name} className="flex items-center gap-sm p-base rounded-lg bg-surface-container-low">
-                <div
-                  className={`w-10 h-10 rounded-full ${player.avatarBg || ''} border-2 border-outline-variant`}
-                  style={player.avatarBg ? {} : { backgroundColor: (player.color || '#6c748b') + '33' }}
-                />
-                <div className="flex-1">
-                  <span className="font-body-sm text-body-sm text-on-surface font-semibold block">{player.name}</span>
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">{roles[i] ?? 'Developer'}</span>
+            {players.map((player) => {
+              const roleLabel = player.role
+                ? player.role.charAt(0).toUpperCase() + player.role.slice(1)
+                : 'Voter'
+              return (
+                <div key={player.name} className="flex items-center gap-sm p-base rounded-lg bg-surface-container-low">
+                  <div
+                    className={`w-10 h-10 rounded-full ${player.avatarBg || ''} border-2 border-outline-variant`}
+                    style={player.avatarBg ? {} : { backgroundColor: (player.color || '#6c748b') + '33' }}
+                  />
+                  <div className="flex-1">
+                    <span className="font-body-sm text-body-sm text-on-surface font-semibold block">{player.name}</span>
+                    <span className="font-label-sm text-label-sm text-on-surface-variant">{roleLabel}</span>
+                  </div>
+                  <span className="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-xs py-[2px] rounded font-bold uppercase">
+                    Online
+                  </span>
                 </div>
-                <span className="font-label-sm text-[10px] bg-secondary-container text-on-secondary-container px-xs py-[2px] rounded font-bold uppercase">
-                  Online
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>
