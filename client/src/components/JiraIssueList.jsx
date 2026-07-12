@@ -28,7 +28,17 @@ export default function JiraIssueList({ issues, onImport, loading }) {
   };
 
   if (issues.length === 0) {
-    return null;
+    return (
+      <div className="bg-surface-container border border-outline-variant rounded-xl p-lg flex flex-col items-center justify-center gap-sm animate-fade-in text-center">
+        <span className="material-symbols-outlined text-[48px] text-on-surface-variant/50">
+          search_off
+        </span>
+        <h3 className="font-label-lg text-on-surface">No Issues Found</h3>
+        <p className="font-body-sm text-on-surface-variant max-w-xs">
+          The selected sprint or filter returned no matching issues. Try selecting a different sprint, board.
+        </p>
+      </div>
+    );
   }
 
   return (
