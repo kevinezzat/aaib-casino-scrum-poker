@@ -108,25 +108,34 @@ export function usePokerTable({ socketHook } = {}) {
   const [chipPlaced, setChipPlaced] = useState(false)
 
   const handleChipSelect = useCallback((value) => {
-    if (chipPlaced) return
-    setSelectedChip(value)
+    // Always allow chip re-selection, even after placing a vote.
+    // If a chip was already placed, selecting a new chip enters "change vote" mode.
+    if (chipPlaced) {
+      setChipPlaced(false)
+      setSelectedChip(value)
+    } else {
+      setSelectedChip(value)
+    }
   }, [chipPlaced])
 
   const handlePlaceChip = useCallback(() => {
+    if (chipPlaced) {
+      // Retrieve vote: clear placed state and selection so the user can re-vote cleanly
+      setChipPlaced(false)
+      setSelectedChip(null)
+      return
+    }
+
     if (!selectedChip) return
 
-    if (!chipPlaced) {
-      setChipPlaced(true)
+    setChipPlaced(true)
 
-      // Live: emit place-chip to server
-      if (socketHook?.sessionId) {
-        socketHook.placeChip(socketHook.sessionId, 'current', selectedChip).catch((err) => {
-          console.error('[usePokerTable] placeChip failed:', err.message)
-          setChipPlaced(false) // rollback on error
-        })
-      }
-    } else {
-      setChipPlaced(false)
+    // Live: emit place-chip to server
+    if (socketHook?.sessionId) {
+      socketHook.placeChip(socketHook.sessionId, 'current', selectedChip).catch((err) => {
+        console.error('[usePokerTable] placeChip failed:', err.message)
+        setChipPlaced(false) // rollback on error
+      })
     }
   }, [selectedChip, chipPlaced, socketHook])
 

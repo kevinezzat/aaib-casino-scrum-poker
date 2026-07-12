@@ -214,6 +214,13 @@ export default function PokerTablePage() {
     }
   }, [currentIssue, sessionId, stories, handlers, code])
 
+  // ── Auto-dismiss toast after 4 seconds ─────────────────────────
+  useEffect(() => {
+    if (!toast) return
+    const timer = setTimeout(() => setToast(null), 4000)
+    return () => clearTimeout(timer)
+  }, [toast])
+
   // Dealer name: prefer the live socket participant, fall back to local player name
   // so the host sees their name immediately before the round-trip completes.
   const dealerName = dealerParticipant?.name ?? (isHost ? localPlayer : null)

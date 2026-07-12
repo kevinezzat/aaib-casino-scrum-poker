@@ -26,7 +26,7 @@ export default function JiraConnectButton({ className = '', roomCode }) {
     <button
       type="button"
       onClick={connect}
-      className={`flex items-center gap-2 bg-[#0052CC] hover:bg-[#0065FF] text-white px-4 py-2 rounded-lg font-label-md transition-colors shadow-sm ${className}`}
+      className={`flex items-center gap-2 bg-[#0052CC] hover:bg-[#0065FF] text-white px-4 py-2 rounded-xl font-label-md transition-colors shadow-sm ${className}`}
     >
       <span className="material-symbols-outlined text-[20px]">api</span>
       Connect Jira

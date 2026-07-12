@@ -21,24 +21,23 @@ export default function GlobalJiraHandler() {
 
     if (jiraConnected === 'true') {
       setToast({ type: 'success', message: 'Successfully connected to Jira!' })
-      // Remove query params
       searchParams.delete('jiraConnected')
       searchParams.delete('reason')
       setSearchParams(searchParams, { replace: true })
     } else if (jiraConnected === 'false') {
       setToast({ type: 'error', message: `Jira connection failed: ${reason || 'Unknown error'}` })
-      // Remove query params
       searchParams.delete('jiraConnected')
       searchParams.delete('reason')
       setSearchParams(searchParams, { replace: true })
     }
-
-    // Clear toast after 5 seconds
-    if (jiraConnected) {
-      const timer = setTimeout(() => setToast(null), 5000)
-      return () => clearTimeout(timer)
-    }
   }, [searchParams, setSearchParams])
+
+  // Auto-dismiss toast after 5 seconds (resets if a new toast appears)
+  useEffect(() => {
+    if (!toast) return
+    const timer = setTimeout(() => setToast(null), 5000)
+    return () => clearTimeout(timer)
+  }, [toast])
 
   useEffect(() => {
     // 2. Listen for reauth events
@@ -51,6 +50,13 @@ export default function GlobalJiraHandler() {
       window.removeEventListener('jira_reauth_required', handleReauth)
     }
   }, [])
+
+  // Auto-dismiss the reauth banner after 10 seconds so it never gets stuck
+  useEffect(() => {
+    if (!showReauthBanner) return
+    const timer = setTimeout(() => setShowReauthBanner(false), 10000)
+    return () => clearTimeout(timer)
+  }, [showReauthBanner])
 
   return (
     <>

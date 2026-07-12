@@ -1,20 +1,25 @@
 import React from 'react'
 
 const DECK = [
-  { value: '1', label: '1' },
-  { value: '2', label: '2' },
-  { value: '3', label: '3' },
-  { value: '5', label: '5' },
-  { value: '8', label: '8' },
-  { value: '13', label: '13' },
-  { value: '20', label: '20' },
-  { value: '?', label: '?' },
+  { value: '1',      label: '1' },
+  { value: '2',      label: '2' },
+  { value: '3',      label: '3' },
+  { value: '5',      label: '5' },
+  { value: '8',      label: '8' },
+  { value: '13',     label: '13' },
+  { value: '20',     label: '20' },
+  { value: '?',      label: '?' },
   { value: 'coffee', icon: 'coffee' },
 ]
 
 /**
  * MobileChipTray — full-screen mobile voting view.
- * HTML ref: lines 742–796.
+ *
+ * States:
+ *  - No chip selected  → "Place Chip" button disabled
+ *  - Chip selected, not placed → "Place Chip · {value}" button enabled
+ *  - Chip placed, same chip selected → "Retrieve Vote" button (amber) — lets user take it back
+ *  - Chip placed, different chip selected → "Confirm Change · {value}" button (primary) — re-votes
  */
 export default function MobileChipTray({
   issue,
@@ -25,13 +30,26 @@ export default function MobileChipTray({
   isActive,
   isSpectator = false,
 }) {
-  const placeLabel = chipPlaced
-    ? '✓ Chip Placed!'
-    : selectedChip === 'coffee'
-      ? 'Need a Break'
-      : selectedChip
-        ? `Place Chip · ${selectedChip}`
-        : 'Place Chip'
+  // Derive the action button's label, colour, and icon
+  let actionLabel, actionIcon, actionClass
+
+  if (chipPlaced) {
+    // Chip is placed — show retrieve
+    actionLabel = 'Retrieve Vote'
+    actionIcon  = 'undo'
+    actionClass = 'bg-amber-500 hover:bg-amber-400'
+  } else if (selectedChip) {
+    // Chip selected but not yet placed
+    const display = selectedChip === 'coffee' ? 'Break ☕' : selectedChip
+    actionLabel = `Place Chip · ${display}`
+    actionIcon  = 'arrow_forward'
+    actionClass = 'bg-secondary hover:bg-secondary/90'
+  } else {
+    // Nothing selected
+    actionLabel = 'Select a chip first'
+    actionIcon  = 'arrow_forward'
+    actionClass = 'bg-secondary/40'
+  }
 
   return (
     <div
@@ -39,6 +57,7 @@ export default function MobileChipTray({
       className={`mobile-panel ${isActive ? 'flex' : 'hidden'} md:hidden flex-1 flex-col bg-background overflow-y-auto pb-[88px]`}
     >
       <main className="flex-1 px-margin-mobile pt-md flex flex-col gap-md">
+
         {/* Issue card */}
         <div
           id="mobile-issue-card"
@@ -58,7 +77,9 @@ export default function MobileChipTray({
           </p>
           {issue?.acceptanceCriteria && (
             <div className="mt-xs">
-              <span className="font-label-sm font-bold text-secondary uppercase text-[10px] tracking-wider block mb-1">Acceptance Criteria</span>
+              <span className="font-label-sm font-bold text-secondary uppercase text-[10px] tracking-wider block mb-1">
+                Acceptance Criteria
+              </span>
               <p className="font-body-sm text-body-sm text-on-surface-variant line-clamp-3">
                 {issue.acceptanceCriteria}
               </p>
@@ -67,11 +88,14 @@ export default function MobileChipTray({
         </div>
 
         {isSpectator ? (
-          /* Spectator view — no chips */
+          /* Spectator view */
           <div className="flex-1 flex flex-col items-center justify-center gap-lg py-xl text-center">
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center"
-              style={{ background: 'radial-gradient(circle, rgba(188,198,224,0.18) 0%, rgba(188,198,224,0.04) 100%)', border: '2px dashed rgba(188,198,224,0.4)' }}
+              style={{
+                background: 'radial-gradient(circle, rgba(188,198,224,0.18) 0%, rgba(188,198,224,0.04) 100%)',
+                border: '2px dashed rgba(188,198,224,0.4)',
+              }}
             >
               <span
                 className="material-symbols-outlined text-[40px] text-tertiary"
@@ -89,29 +113,47 @@ export default function MobileChipTray({
           </div>
         ) : (
           <>
+            {/* Status banner when chip is placed */}
+            {chipPlaced && (
+              <div className="flex items-center gap-2 bg-secondary/10 border border-secondary/30 rounded-xl px-md py-sm animate-fade-in">
+                <span
+                  className="material-symbols-outlined text-secondary text-[20px]"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  check_circle
+                </span>
+                <p className="font-label-sm text-secondary font-semibold">
+                  Vote submitted — tap any chip or "Retrieve Vote" to change it.
+                </p>
+              </div>
+            )}
+
             {/* Chip tray */}
             <div className="flex-1 flex flex-col items-center justify-center">
               <h2 className="font-label-md text-label-md text-on-surface-variant mb-md uppercase tracking-wider text-center">
-                Select your estimate
+                {chipPlaced ? 'Change your estimate' : 'Select your estimate'}
               </h2>
               <div id="chip-grid" className="grid grid-cols-3 gap-md justify-items-center">
                 {DECK.map((chip) => {
                   const isSelected = selectedChip === chip.value
+                  // Placed chip gets a distinct "voted" ring; other chips are fully interactive
+                  const isPlacedChip = chipPlaced && isSelected
                   return (
                     <button
                       key={chip.value}
                       aria-label={`Estimate ${chip.value}`}
-                      className={`estimate-chip ${isSelected ? 'selected' : ''} ${chipPlaced && !isSelected ? 'opacity-40 pointer-events-none' : ''
-                        }`}
+                      className={`estimate-chip ${isSelected ? 'selected' : ''} ${
+                        isPlacedChip ? 'ring-2 ring-secondary ring-offset-2' : ''
+                      }`}
                       data-value={chip.value}
                       onClick={() => onChipSelect(chip.value)}
                     >
                       {chip.icon ? (
-                        <span className={`material-symbols-outlined text-3xl z-10 pointer-events-none text-on-surface`}>
+                        <span className="material-symbols-outlined text-3xl z-10 pointer-events-none text-on-surface">
                           {chip.icon}
                         </span>
                       ) : (
-                        <span className={`font-headline-xl text-headline-xl z-10 pointer-events-none text-on-surface`}>
+                        <span className="font-headline-xl text-headline-xl z-10 pointer-events-none text-on-surface">
                           {chip.label}
                         </span>
                       )}
@@ -121,20 +163,16 @@ export default function MobileChipTray({
               </div>
             </div>
 
-            {/* Place chip action */}
+            {/* Action button */}
             <div className="mt-auto pt-sm w-full">
               <button
                 id="btn-place-chip"
-                className={`place-chip-btn w-full text-white font-label-md text-label-md py-4 rounded-xl flex items-center justify-center gap-2 font-bold tracking-wide uppercase transition-all ${chipPlaced ? 'bg-secondary' : 'bg-secondary/90'
-                  }`}
-                style={{ opacity: selectedChip ? 1 : 0.5 }}
-                disabled={!selectedChip}
+                className={`place-chip-btn w-full text-white font-label-md text-label-md py-4 rounded-xl flex items-center justify-center gap-2 font-bold tracking-wide uppercase transition-all ${actionClass}`}
+                disabled={!chipPlaced && !selectedChip}
                 onClick={onPlaceChip}
               >
-                <span id="place-chip-label">{placeLabel}</span>
-                <span className="material-symbols-outlined text-[18px]">
-                  {chipPlaced ? 'check' : 'arrow_forward'}
-                </span>
+                <span id="place-chip-label">{actionLabel}</span>
+                <span className="material-symbols-outlined text-[18px]">{actionIcon}</span>
               </button>
             </div>
           </>

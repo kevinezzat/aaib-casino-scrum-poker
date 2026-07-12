@@ -402,6 +402,18 @@
 }
 .place-chip-btn:active { transform: translateY(0); }
 .place-chip-btn.placed { background: #006c49 !important; }
+/* Retrieve-vote amber hover override */
+.place-chip-btn:hover { box-shadow: 0 6px 20px rgba(0, 108, 73, 0.35); }
+
+/* Placed chip pulse ring */
+@keyframes chip-placed-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(0, 108, 73, 0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(0, 108, 73, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(0, 108, 73, 0); }
+}
+.estimate-chip.selected.ring-2 {
+  animation: chip-placed-ring 1.4s ease-out infinite, chip-select-bounce 0.4s ease-out forwards;
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    Mobile Panel transitions
