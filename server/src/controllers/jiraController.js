@@ -105,7 +105,9 @@ const getBacklog = withJiraErrorHandling(async (req, res) => {
   const data = await jiraRequest(sessionId, 'POST', '/search/jql', {
     body: reqBody
   });
-
+  if (!data) {
+    return res.status(404).json({ error: `No issues found for JQL: ${effectiveJql}` });
+  }
   // Fetch approximate count
   const countData = await jiraRequest(sessionId, 'POST', '/search/approximate-count', {
     body: {
@@ -224,9 +226,9 @@ const writeStoryPoints = withJiraErrorHandling(async (req, res) => {
   const candidateFields = customFieldId && customFieldId !== 'customfield_10016'
     ? [customFieldId]
     : [...new Set([
-        ...discoveredFieldIds,
-        'customfield_10028', 'customfield_10002', 'customfield_10016', 'customfield_10004'
-      ])];
+      ...discoveredFieldIds,
+      'customfield_10028', 'customfield_10002', 'customfield_10016', 'customfield_10004'
+    ])];
 
   let success = false;
   let lastError = null;
@@ -450,8 +452,13 @@ const getSprints = withJiraErrorHandling(async (req, res) => {
     return res.status(404).json({ error: `No session found for room code: ${roomCode}` });
   }
 
+
   const data = await jiraRequest(sessionId, 'GET', `/board/${boardId}/sprint?state=active,future`, { apiPrefix: '/rest/agile/1.0' });
 
+
+  if (!data) {
+    return res.status(404).json({ error: `No sprints found for board ID: ${boardId}` });
+  }
   const sprints = (data.values || []).map(s => ({
     id: s.id,
     name: s.name,
