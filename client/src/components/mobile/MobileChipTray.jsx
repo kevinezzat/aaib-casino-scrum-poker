@@ -113,17 +113,17 @@ export default function MobileChipTray({
           </div>
         ) : (
           <>
-            {/* Status banner when chip is placed */}
+            {/* Floating toast — does not affect layout */}
             {chipPlaced && (
-              <div className="flex items-center gap-2 bg-secondary/10 border border-secondary/30 rounded-xl px-md py-sm animate-fade-in">
+              <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-secondary text-on-secondary px-4 py-2.5 rounded-full shadow-lg animate-fade-in whitespace-nowrap">
                 <span
-                  className="material-symbols-outlined text-secondary text-[20px]"
+                  className="material-symbols-outlined text-[18px]"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   check_circle
                 </span>
-                <p className="font-label-sm text-secondary font-semibold">
-                  Vote submitted — tap any chip or "Retrieve Vote" to change it.
+                <p className="font-label-sm font-semibold text-sm">
+                  Vote submitted — tap to change
                 </p>
               </div>
             )}
